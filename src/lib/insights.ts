@@ -166,6 +166,7 @@ export async function searchAccountsByName(q: string, limit = 10) {
      WHERE a.locked_at IS NULL
        AND a.suspended_at IS NULL
        AND a.activated = TRUE
+       AND a.email NOT ILIKE '%@smartkarma.com'
        AND (a.name ILIKE $1 OR a.first_name ILIKE $1 OR a.email ILIKE $1)
        AND (
          (a.is_insight_provider = TRUE AND EXISTS (
