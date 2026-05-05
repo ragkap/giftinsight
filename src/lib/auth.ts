@@ -108,11 +108,13 @@ export async function verifyCredentials(email: string, password: string): Promis
 }
 
 export async function isProClient(email: string): Promise<{ active: boolean; accountId?: number }> {
+  // 'Active Pro client' = is_client + accounts.activated. Subscription dates
+  // are not reliable (clients sign in daily yet show 2022-era end dates).
   const rows = await readQuery<{ id: number }>(
     `SELECT id FROM accounts
      WHERE LOWER(email) = LOWER($1)
-       AND is_client = true
-       AND (subscription_end_date IS NULL OR subscription_end_date >= CURRENT_DATE)
+       AND is_client = TRUE
+       AND activated = TRUE
        AND locked_at IS NULL
        AND suspended_at IS NULL
      LIMIT 1`,

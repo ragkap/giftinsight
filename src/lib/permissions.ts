@@ -87,10 +87,16 @@ export async function getPermissionState(authorId: number): Promise<PermissionSt
     `SELECT open_to_all FROM gift_permissions WHERE author_account_id = $1`,
     [authorId],
   );
-  const grants = await writeQuery<{ gifter_account_id: number; created_at: string }>(
+  // pg returns BIGINT as a string by default. Cast to Number so downstream
+  // Map lookups against accounts.id (integer) match.
+  const grantRows = await writeQuery<{ gifter_account_id: string | number; created_at: string }>(
     `SELECT gifter_account_id, created_at FROM gift_permission_grants
      WHERE author_account_id = $1 ORDER BY created_at DESC`,
     [authorId],
   );
+  const grants = grantRows.map((r) => ({
+    gifter_account_id: Number(r.gifter_account_id),
+    created_at: r.created_at,
+  }));
   return { openToAll: Boolean(open_to_all), grants };
 }

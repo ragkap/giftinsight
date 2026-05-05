@@ -80,7 +80,6 @@ export function PermissionsManager() {
         <span className="inline-block h-2 w-2 rounded-full bg-accent mt-1.5" />
         <div className="text-sm text-ink-800">
           <strong className="text-ink-900">Smartkarma employees</strong> can always gift your insights.
-          This applies to anyone signed in with an <code className="text-[12px] bg-white border border-ink-100 px-1 py-0.5 rounded">@smartkarma.com</code> email.
         </div>
       </div>
 

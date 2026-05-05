@@ -148,8 +148,9 @@ export async function searchAccountsByName(q: string, limit = 10) {
   //       table's last_published_at column is stale, so we read the truth from
   //       the insights table).
   //   (2) active Professional clients — is_client=true, client_type='professional',
-  //       subscription not expired.
-  // Plus the standard locked/suspended safety net.
+  //       accounts.activated=true (subscription_end_date is unreliable — many
+  //       active clients have stale 2022-era end dates yet are still using SK).
+  // Plus the standard locked/suspended/activated safety net.
   return await readQuery<{
     id: number;
     email: string;
@@ -164,6 +165,7 @@ export async function searchAccountsByName(q: string, limit = 10) {
      LEFT JOIN companies c ON c.id = a.company_id
      WHERE a.locked_at IS NULL
        AND a.suspended_at IS NULL
+       AND a.activated = TRUE
        AND (a.name ILIKE $1 OR a.first_name ILIKE $1 OR a.email ILIKE $1)
        AND (
          (a.is_insight_provider = TRUE AND EXISTS (
@@ -173,9 +175,7 @@ export async function searchAccountsByName(q: string, limit = 10) {
              AND i.published_at >= NOW() - INTERVAL '12 months'
          ))
          OR
-         (a.is_client = TRUE
-            AND a.client_type = 'professional'
-            AND (a.subscription_end_date IS NULL OR a.subscription_end_date >= CURRENT_DATE))
+         (a.is_client = TRUE AND a.client_type = 'professional')
        )
      ORDER BY (a.name IS NULL), a.name ASC
      LIMIT $2`,
