@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  @apply bg-white text-ink-900 antialiased;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+}
+
+/* Insight HTML rendered from `detail` field */
+.prose-sk {
+  @apply text-ink-800 leading-relaxed;
+}
+.prose-sk h1 { @apply text-2xl font-semibold mt-8 mb-3; }
+.prose-sk h2 { @apply text-xl font-semibold mt-7 mb-3; }
+.prose-sk h3 { @apply text-lg font-semibold mt-6 mb-2; }
+.prose-sk p  { @apply mb-4; }
+.prose-sk ul { @apply list-disc pl-6 mb-4; }
+.prose-sk ol { @apply list-decimal pl-6 mb-4; }
+.prose-sk li { @apply mb-1; }
+.prose-sk a  { @apply text-accent underline underline-offset-2; }
+.prose-sk blockquote { @apply border-l-2 border-accent/50 pl-4 italic text-ink-700 my-4; }
+.prose-sk img { @apply rounded-lg my-4 max-w-full; }
+.prose-sk table { @apply w-full text-sm my-4 border-collapse; }
+.prose-sk th, .prose-sk td { @apply border border-ink-100 px-2 py-1.5; }
+
+/* Subtle focus ring across the app */
+*:focus-visible {
+  outline: 2px solid #24a9a7;
+  outline-offset: 2px;
+}
+
+@keyframes giftSlideUp {
+  0%   { transform: translateY(120%); opacity: 0; }
+  60%  { transform: translateY(-6px); opacity: 1; }
+  100% { transform: translateY(0);    opacity: 1; }
+}
+.animate-gift-popup {
+  animation: giftSlideUp 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes giftPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(36, 169, 167, 0.45); }
+  50%      { box-shadow: 0 0 0 14px rgba(36, 169, 167, 0); }
+}
+.animate-gift-pulse { animation: giftPulse 1.8s ease-out infinite; }
