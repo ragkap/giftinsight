@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { fmtDate, fmtDateTime } from '@/lib/fmt';
 
 type Link = {
   id: number; token: string; insight_id: number; insight_slug: string;
@@ -61,7 +62,7 @@ export function Analytics() {
                     <div className="text-sm text-ink-900 truncate">{l.insight_tagline}</div>
                     <div className="text-xs text-ink-500 mt-0.5">
                       {l.view_count}/{l.max_views} views · {l.thanks_count} thanks ·{' '}
-                      {expired ? 'expired' : exhausted ? 'cap reached' : `expires ${new Date(l.expires_at).toLocaleDateString()}`}
+                      {expired ? 'expired' : exhausted ? 'cap reached' : `expires ${fmtDate(l.expires_at)}`}
                     </div>
                   </div>
                   <button onClick={() => copy(l.token, l.id)} className="text-xs text-accent hover:underline shrink-0">
@@ -91,8 +92,8 @@ export function Analytics() {
                                 {v.recipient_first_name} {v.recipient_last_name}
                                 {v.is_pro_client && <span className="ml-1 text-accent text-[10px]">(pro)</span>}
                               </td>
-                              <td className="py-1.5 text-ink-500">{new Date(v.viewed_at).toLocaleString()}</td>
-                              <td className="py-1.5 text-ink-500">{v.thanked_at ? new Date(v.thanked_at).toLocaleString() : '—'}</td>
+                              <td className="py-1.5 text-ink-500">{fmtDateTime(v.viewed_at)}</td>
+                              <td className="py-1.5 text-ink-500">{v.thanked_at ? fmtDateTime(v.thanked_at) : '—'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -176,7 +177,7 @@ function TopReaders({ readers }: { readers: Reader[] }) {
                   <td className="px-4 py-2 text-ink-900">{r.recipient_first_name} {r.recipient_last_name}</td>
                   <td className="px-4 py-2 font-medium">{r.reads}</td>
                   <td className="px-4 py-2">{r.thanks}</td>
-                  <td className="px-4 py-2 text-ink-500">{new Date(r.last_read).toLocaleDateString()}</td>
+                  <td className="px-4 py-2 text-ink-500">{fmtDate(r.last_read)}</td>
                 </tr>
               ))}
             </tbody>

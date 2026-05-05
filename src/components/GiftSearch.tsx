@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { CheckIcon, GiftIcon } from '@/components/icons';
+import { fmtDate } from '@/lib/fmt';
 
 type Result = {
   id: number;
@@ -167,7 +168,7 @@ export function GiftSearch() {
                     {r.entity && <span className="text-ink-400">·</span>}
                     {r.entity && <span>{r.entity}</span>}
                     {r.ticker && <span className="font-mono text-accent-700">{r.ticker}</span>}
-                    {r.publishedAt && <><span className="text-ink-400">·</span><span>{new Date(r.publishedAt).toLocaleDateString()}</span></>}
+                    {r.publishedAt && <><span className="text-ink-400">·</span><span>{fmtDate(r.publishedAt)}</span></>}
                   </div>
                 </div>
                 <button

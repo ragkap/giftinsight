@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
+import { fmtDate } from '@/lib/fmt';
 
 export type RecentGift = {
   id: number;
@@ -37,7 +38,7 @@ export function RecentGifts({ links }: { links: RecentGift[] }) {
                 <div className="text-sm text-ink-900 truncate">{l.insight_tagline}</div>
                 <div className="text-xs text-ink-500 mt-0.5">
                   {l.view_count}/{l.max_views} views · {l.thanks_count} thanks ·{' '}
-                  {expired ? 'expired' : exhausted ? 'cap reached' : `expires ${new Date(l.expires_at).toLocaleDateString()}`}
+                  {expired ? 'expired' : exhausted ? 'cap reached' : `expires ${fmtDate(l.expires_at)}`}
                 </div>
               </div>
               <button

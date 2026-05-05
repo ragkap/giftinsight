@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TrendingInsight } from '@/lib/trending';
 import { BrandMark, CheckIcon, GiftIcon } from '@/components/icons';
+import { fmtDate } from '@/lib/fmt';
 
 type Props = {
   tagline: string;
@@ -82,7 +83,7 @@ export function Reader(p: Props) {
         <div className="text-xs text-ink-500 flex flex-wrap items-center gap-2">
           {p.ticker && <span className="font-mono text-accent-700">{p.ticker}</span>}
           {p.entityName && <span>{p.entityName}</span>}
-          {p.publishedAt && <span>· {new Date(p.publishedAt).toLocaleDateString()}</span>}
+          {p.publishedAt && <span>· {fmtDate(p.publishedAt)}</span>}
         </div>
         <h1 className="mt-3 text-3xl md:text-4xl font-semibold leading-tight text-ink-900">
           {p.tagline}
