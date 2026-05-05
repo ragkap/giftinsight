@@ -6,20 +6,46 @@ export const BRAND_LOGO_URL =
 
 const BRAND_ASPECT = 1000 / 190;
 
-export function BrandMark({ height = 22, className = '' }: { height?: number; className?: string }) {
-  // The full wordmark — drop adjacent "Smartkarma" text wherever this appears.
-  // Local /brand-primary.png is served from /public for snappy first paint.
+/**
+ * Renders the Smartkarma wordmark by default. On narrow viewports (`< md`)
+ * automatically swaps to the square curation-compass mark to save horizontal
+ * space — pass `compact={false}` to opt out (e.g. for centered hero copy
+ * where the wordmark looks fine on mobile too).
+ */
+export function BrandMark({
+  height = 22,
+  compact = true,
+  className = '',
+}: {
+  height?: number;
+  compact?: boolean;
+  className?: string;
+}) {
   return (
-    <img
-      src="/brand-primary.png"
-      alt="Smartkarma"
-      width={Math.round(height * BRAND_ASPECT)}
-      height={height}
-      decoding="async"
-      loading="eager"
-      style={{ height: `${height}px`, width: 'auto' }}
-      className={`inline-block align-middle ${className}`}
-    />
+    <>
+      {compact && (
+        <img
+          src="/brand.png"
+          alt="Smartkarma"
+          width={height}
+          height={height}
+          decoding="async"
+          loading="eager"
+          style={{ height: `${height}px`, width: `${height}px` }}
+          className={`inline-block rounded-[5px] align-middle md:hidden ${className}`}
+        />
+      )}
+      <img
+        src="/brand-primary.png"
+        alt="Smartkarma"
+        width={Math.round(height * BRAND_ASPECT)}
+        height={height}
+        decoding="async"
+        loading="eager"
+        style={{ height: `${height}px`, width: 'auto' }}
+        className={`align-middle ${compact ? 'hidden md:inline-block' : 'inline-block'} ${className}`}
+      />
+    </>
   );
 }
 

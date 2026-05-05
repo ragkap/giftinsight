@@ -13,19 +13,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-ink-50/40">
       <header className="border-b border-ink-100 bg-white sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-6">
-          <Link href="/app" aria-label="Smartkarma — Gift" className="inline-flex items-center">
-            <BrandMark height={22} />
+        <div className="max-w-6xl mx-auto px-4 md:px-6 h-14 flex items-center gap-3 md:gap-6">
+          <Link href="/app" aria-label="Smartkarma — Gift" className="inline-flex items-center shrink-0">
+            <BrandMark height={24} />
           </Link>
-          <nav className="flex items-center gap-5 text-sm text-ink-700">
+          <nav className="flex items-center gap-3 md:gap-5 text-sm text-ink-700">
             <Link href="/app" className="hover:text-accent">Gift</Link>
             <Link href="/app/analytics" className="hover:text-accent">Analytics</Link>
             {s.isInsightProvider && (
               <Link href="/app/permissions" className="hover:text-accent">Permissions</Link>
             )}
           </nav>
-          <div className="ml-auto flex items-center gap-3">
-            <span className="text-xs text-ink-500 hidden sm:inline">{s.name ?? s.firstName ?? s.email}</span>
+          <div className="ml-auto flex items-center gap-3 shrink-0">
+            <span className="text-xs text-ink-500 hidden md:inline">{s.name ?? s.firstName ?? s.email}</span>
             <LogoutButton />
           </div>
         </div>

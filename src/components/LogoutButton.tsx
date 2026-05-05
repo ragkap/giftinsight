@@ -14,7 +14,7 @@ export function LogoutButton() {
         })
       }
       disabled={pending}
-      className="text-xs text-ink-500 hover:text-ink-900"
+      className="text-xs text-ink-500 hover:text-ink-900 whitespace-nowrap"
     >
       {pending ? '…' : 'Sign out'}
     </button>
