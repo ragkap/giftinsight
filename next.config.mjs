@@ -5,7 +5,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // No `output: 'standalone'` — Railway invokes `next start`, which doesn't
+  // support standalone builds. The default server output is what we want here.
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
