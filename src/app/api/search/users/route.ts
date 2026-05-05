@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     results: rows.map((r) => ({
       id: r.id,
       name: r.name ?? r.first_name ?? r.email,
-      email: r.email,
+      company: r.company_name,
       isInsightProvider: r.is_insight_provider,
     })),
   });

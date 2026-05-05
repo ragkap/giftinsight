@@ -144,13 +144,22 @@ export async function searchAccountsByName(q: string, limit = 10) {
   const like = `%${trimmed}%`;
   // No confirmed_at filter — internal Smartkarma accounts are created without
   // email confirmation but should still be findable when granting permission.
-  return await readQuery<{ id: number; email: string; name: string | null; first_name: string | null; is_insight_provider: boolean }>(
-    `SELECT id, email, name, first_name, is_insight_provider
-     FROM accounts
-     WHERE locked_at IS NULL
-       AND suspended_at IS NULL
-       AND (name ILIKE $1 OR first_name ILIKE $1 OR email ILIKE $1)
-     ORDER BY (name IS NULL), name ASC
+  return await readQuery<{
+    id: number;
+    email: string;
+    name: string | null;
+    first_name: string | null;
+    is_insight_provider: boolean;
+    company_name: string | null;
+  }>(
+    `SELECT a.id, a.email, a.name, a.first_name, a.is_insight_provider,
+            c.name AS company_name
+     FROM accounts a
+     LEFT JOIN companies c ON c.id = a.company_id
+     WHERE a.locked_at IS NULL
+       AND a.suspended_at IS NULL
+       AND (a.name ILIKE $1 OR a.first_name ILIKE $1 OR a.email ILIKE $1)
+     ORDER BY (a.name IS NULL), a.name ASC
      LIMIT $2`,
     [like, Math.min(limit, 25)],
   );
@@ -158,8 +167,17 @@ export async function searchAccountsByName(q: string, limit = 10) {
 
 export async function getAccountsByIds(ids: number[]) {
   if (ids.length === 0) return [];
-  return await readQuery<{ id: number; name: string | null; first_name: string | null; email: string }>(
-    `SELECT id, name, first_name, email FROM accounts WHERE id = ANY($1::bigint[])`,
+  return await readQuery<{
+    id: number;
+    name: string | null;
+    first_name: string | null;
+    email: string;
+    company_name: string | null;
+  }>(
+    `SELECT a.id, a.name, a.first_name, a.email, c.name AS company_name
+     FROM accounts a
+     LEFT JOIN companies c ON c.id = a.company_id
+     WHERE a.id = ANY($1::bigint[])`,
     [ids],
   );
 }

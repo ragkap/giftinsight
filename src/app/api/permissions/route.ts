@@ -22,7 +22,7 @@ export async function GET() {
       return {
         id: g.gifter_account_id,
         name: a?.name ?? a?.first_name ?? a?.email ?? `User ${g.gifter_account_id}`,
-        email: a?.email ?? '',
+        company: a?.company_name ?? null,
         createdAt: g.created_at,
       };
     }),
