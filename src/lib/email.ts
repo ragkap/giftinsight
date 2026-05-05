@@ -52,12 +52,14 @@ export function readNotificationHtml(args: {
   recipientLastName: string;
   recipientEmail: string;
   insightTagline: string;
+  appBaseUrl: string;
 }) {
+  const dashboardUrl = `${args.appBaseUrl.replace(/\/$/, '')}/app/analytics`;
   return shell(
     `<p style="margin:0 0 14px;">Hi ${esc(args.gifterFirstName)},</p>
      <p style="margin:0 0 14px;"><strong>${esc(args.recipientFirstName)} ${esc(args.recipientLastName)}</strong> just read the insight you gifted:</p>
      <p style="margin:0 0 18px;font-size:16px;font-weight:600;border-left:3px solid ${ACCENT};padding:6px 12px;background:#effaf9;border-radius:0 6px 6px 0;">${esc(args.insightTagline)}</p>
-     <p style="margin:0;color:#525252;font-size:13px;">View opens and "thanks" responses on your dashboard.</p>`,
+     <p style="margin:0;color:#525252;font-size:13px;">View opens and "thanks" responses on <a href="${esc(dashboardUrl)}" style="color:${ACCENT};font-weight:600;text-decoration:underline;">your dashboard</a>.</p>`,
     `${args.recipientFirstName} read the insight you gifted.`,
   );
 }

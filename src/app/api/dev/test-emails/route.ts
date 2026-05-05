@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
         recipientLastName: sample.recipientLastName,
         recipientEmail: sample.recipientEmail,
         insightTagline: sample.insightTagline,
+        appBaseUrl: e.APP_BASE_URL,
       }),
     },
     {

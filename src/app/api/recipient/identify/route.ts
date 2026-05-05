@@ -129,6 +129,7 @@ export async function POST(req: NextRequest) {
         gifterFirstName: link.gifter_name.split(' ')[0] || link.gifter_name,
         recipientFirstName: firstName, recipientLastName: lastName, recipientEmail: email,
         insightTagline: link.insight_tagline,
+        appBaseUrl: env().APP_BASE_URL,
       }),
     });
 

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { writeQuery } from '@/lib/db-write';
 import { GiftLanding } from '@/components/GiftLanding';
@@ -5,6 +6,55 @@ import { env } from '@/lib/env';
 import { BrandMark, GiftIcon } from '@/components/icons';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  let link: { insight_tagline: string; gifter_name: string } | undefined;
+  try {
+    link = (
+      await writeQuery<{ insight_tagline: string; gifter_name: string }>(
+        `SELECT insight_tagline, gifter_name FROM gift_links WHERE token = $1`,
+        [token],
+      )
+    )[0];
+  } catch {
+    // DB unavailable — fall back to generic share preview.
+  }
+
+  const fallbackTitle = "You've been gifted a Smartkarma insight";
+  const title = link
+    ? `${link.gifter_name} has gifted this Insight to you: "${link.insight_tagline}"`
+    : fallbackTitle;
+  const description = link
+    ? `Read "${link.insight_tagline}" with full access on Smartkarma — gifted by ${link.gifter_name}.`
+    : 'A complimentary, full-access read on Smartkarma.';
+
+  // The dynamic image lives at /g/[token]/opengraph-image (Next convention).
+  const ogImage = `/g/${encodeURIComponent(token)}/opengraph-image`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      siteName: 'Smartkarma',
+      type: 'article',
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [ogImage],
+    },
+    robots: { index: false, follow: false },
+  };
+}
 
 type LinkRow = {
   id: number; token: string; insight_id: number; insight_slug: string;
