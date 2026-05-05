@@ -10,15 +10,15 @@
     "migrate": "node scripts/migrate.mjs"
   },
   "dependencies": {
-    "next": "15.0.3",
-    "react": "19.0.0-rc-66855b96-20241106",
-    "react-dom": "19.0.0-rc-66855b96-20241106",
-    "pg": "^8.13.1",
     "bcryptjs": "^2.4.3",
+    "isomorphic-dompurify": "^2.18.0",
     "jose": "^5.9.6",
-    "zod": "^3.23.8",
+    "next": "^16.2.4",
+    "pg": "^8.13.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "resend": "^4.0.1",
-    "isomorphic-dompurify": "^2.18.0"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
