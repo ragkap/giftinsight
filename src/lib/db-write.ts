@@ -20,9 +20,14 @@ function build() {
   });
 }
 
-export const writePool: Pool = globalThis.__sk_write_pool ?? (globalThis.__sk_write_pool = build());
+// Lazy: never construct (or validate env) at module load — Next 16's
+// page-data collection imports this file before runtime env is available.
+function pool(): Pool {
+  if (!globalThis.__sk_write_pool) globalThis.__sk_write_pool = build();
+  return globalThis.__sk_write_pool;
+}
 
 export async function writeQuery<T extends QueryResultRow = QueryResultRow>(sql: string, params: unknown[] = []) {
-  const r = await writePool.query<T>(sql, params as never[]);
+  const r = await pool().query<T>(sql, params as never[]);
   return r.rows;
 }
