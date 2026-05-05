@@ -14,12 +14,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen bg-ink-50/40">
       <header className="border-b border-ink-100 bg-white sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-6">
-          <Link href="/app" className="inline-flex items-center gap-3 text-sm">
-            <BrandMark height={20} />
-            <span className="h-4 w-px bg-ink-200" aria-hidden />
-            <span className="font-semibold tracking-tight text-ink-900">
-              Gift <span className="text-accent">Insight</span>
-            </span>
+          <Link href="/app" aria-label="Smartkarma — Search & gift" className="inline-flex items-center">
+            <BrandMark height={22} />
           </Link>
           <nav className="flex items-center gap-5 text-sm text-ink-700">
             <Link href="/app" className="hover:text-accent">Search & gift</Link>
