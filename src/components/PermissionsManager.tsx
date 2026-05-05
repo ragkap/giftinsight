@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useTransition } from 'react';
+import { fmtDate } from '@/lib/fmt';
 
 type State = {
   openToAll: boolean;
@@ -141,9 +142,12 @@ export function PermissionsManager() {
         <ul className="divide-y divide-ink-100">
           {state.grants.map((g) => (
             <li key={g.id} className="px-4 py-3 flex items-center gap-3">
-              <div className="flex-1 min-w-0 text-sm text-ink-900 truncate">
-                {g.name}
-                {g.company && <span className="text-ink-500"> ({g.company})</span>}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-ink-900 truncate">
+                  {g.name}
+                  {g.company && <span className="text-ink-500"> ({g.company})</span>}
+                </div>
+                <div className="text-xs text-ink-400 mt-0.5">Granted {fmtDate(g.createdAt)}</div>
               </div>
               <button onClick={() => revoke(g.id)} disabled={specificDisabled}
                 className="text-xs text-ink-500 hover:text-red-600 disabled:hover:text-ink-300">Revoke</button>
