@@ -74,23 +74,27 @@ type AccountRow = {
   first_name: string | null;
   is_insight_provider: boolean;
   is_client: boolean;
-  confirmed_at: Date | null;
   locked_at: Date | null;
+  suspended_at: Date | null;
 };
 
 export async function verifyCredentials(email: string, password: string): Promise<Session | null> {
+  // Note: we deliberately do NOT require `confirmed_at IS NOT NULL` — internal
+  // Smartkarma accounts are created via admin without email confirmation, so
+  // the confirmed_at gate would lock out ~all employees.
   const rows = await readQuery<AccountRow>(
     `SELECT id, email, encrypted_password, name, first_name, is_insight_provider,
-            is_client, confirmed_at, locked_at
+            is_client, locked_at, suspended_at
      FROM accounts WHERE LOWER(email) = LOWER($1) LIMIT 1`,
     [email],
   );
   const a = rows[0];
   if (!a) return null;
   if (a.locked_at) return null;
-  if (!a.confirmed_at) return null;
+  if (a.suspended_at) return null;
+  if (!a.encrypted_password) return null;
 
-  // Devise stores bcrypt hashes with $2a$ prefix; bcryptjs compares them fine
+  // Devise stores bcrypt hashes with $2a$ prefix; bcryptjs compares them fine.
   const ok = await bcrypt.compare(password, a.encrypted_password);
   if (!ok) return null;
 
@@ -109,8 +113,8 @@ export async function isProClient(email: string): Promise<{ active: boolean; acc
      WHERE LOWER(email) = LOWER($1)
        AND is_client = true
        AND (subscription_end_date IS NULL OR subscription_end_date >= CURRENT_DATE)
-       AND confirmed_at IS NOT NULL
        AND locked_at IS NULL
+       AND suspended_at IS NULL
      LIMIT 1`,
     [email],
   );

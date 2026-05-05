@@ -142,11 +142,13 @@ export async function searchAccountsByName(q: string, limit = 10) {
   const trimmed = q.trim();
   if (trimmed.length < 2) return [];
   const like = `%${trimmed}%`;
+  // No confirmed_at filter — internal Smartkarma accounts are created without
+  // email confirmation but should still be findable when granting permission.
   return await readQuery<{ id: number; email: string; name: string | null; first_name: string | null; is_insight_provider: boolean }>(
     `SELECT id, email, name, first_name, is_insight_provider
      FROM accounts
-     WHERE confirmed_at IS NOT NULL
-       AND locked_at IS NULL
+     WHERE locked_at IS NULL
+       AND suspended_at IS NULL
        AND (name ILIKE $1 OR first_name ILIKE $1 OR email ILIKE $1)
      ORDER BY (name IS NULL), name ASC
      LIMIT $2`,
