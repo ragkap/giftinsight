@@ -142,8 +142,14 @@ export async function searchAccountsByName(q: string, limit = 10) {
   const trimmed = q.trim();
   if (trimmed.length < 2) return [];
   const like = `%${trimmed}%`;
-  // No confirmed_at filter — internal Smartkarma accounts are created without
-  // email confirmation but should still be findable when granting permission.
+  // Restrict to:
+  //   (1) active Insight Providers — is_insight_provider=true AND has published
+  //       at least one insight in the last 12 months (the insight_providers
+  //       table's last_published_at column is stale, so we read the truth from
+  //       the insights table).
+  //   (2) active Professional clients — is_client=true, client_type='professional',
+  //       subscription not expired.
+  // Plus the standard locked/suspended safety net.
   return await readQuery<{
     id: number;
     email: string;
@@ -159,6 +165,18 @@ export async function searchAccountsByName(q: string, limit = 10) {
      WHERE a.locked_at IS NULL
        AND a.suspended_at IS NULL
        AND (a.name ILIKE $1 OR a.first_name ILIKE $1 OR a.email ILIKE $1)
+       AND (
+         (a.is_insight_provider = TRUE AND EXISTS (
+           SELECT 1 FROM insights i
+           WHERE i.account_id = a.id
+             AND i.aasm_state = 'published'
+             AND i.published_at >= NOW() - INTERVAL '12 months'
+         ))
+         OR
+         (a.is_client = TRUE
+            AND a.client_type = 'professional'
+            AND (a.subscription_end_date IS NULL OR a.subscription_end_date >= CURRENT_DATE))
+       )
      ORDER BY (a.name IS NULL), a.name ASC
      LIMIT $2`,
     [like, Math.min(limit, 25)],
