@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'disabled_in_production' }, { status: 403 });
   }
   const REVIEW_TO = req.nextUrl.searchParams.get('to')?.trim() || DEFAULT_REVIEW_TO;
+  const ONLY = req.nextUrl.searchParams.get('only')?.trim().toLowerCase() || null;
 
   const e = env();
   const sample = {
@@ -39,8 +40,9 @@ export async function POST(req: NextRequest) {
     giftLinkUrl: `${e.APP_BASE_URL.replace(/\/$/, '')}/g/SAMPLEtokenSAMPLEtokenABC`,
   };
 
-  const messages: Array<{ subject: string; html: string }> = [
+  const messages: Array<{ key: string; subject: string; html: string }> = [
     {
+      key: 'read',
       subject: '[TEST 1/7] Read notification → gifter',
       html: readNotificationHtml({
         gifterFirstName: sample.gifterFirstName,
@@ -52,6 +54,7 @@ export async function POST(req: NextRequest) {
       }),
     },
     {
+      key: 'pro',
       subject: '[TEST 2/7] Pro-client redirect → gifter',
       html: proClientNotificationHtml({
         gifterFirstName: sample.gifterFirstName,
@@ -62,6 +65,7 @@ export async function POST(req: NextRequest) {
       }),
     },
     {
+      key: 'thanks',
       subject: '[TEST 3/7] Thanks → insight author',
       html: thanksToAuthorHtml({
         authorFirstName: sample.authorFirstName,
@@ -73,6 +77,7 @@ export async function POST(req: NextRequest) {
       }),
     },
     {
+      key: 'trial',
       subject: `[TEST 4/7] Trial intent → ${e.SALES_EMAIL}`,
       html: trialInterestHtml({
         recipientFirstName: sample.recipientFirstName,
@@ -84,6 +89,7 @@ export async function POST(req: NextRequest) {
       }),
     },
     {
+      key: 'welcome',
       subject: '[TEST 5/7] Welcome → first-time gifter',
       html: gifterWelcomeHtml({
         firstName: sample.gifterFirstName,
@@ -94,6 +100,7 @@ export async function POST(req: NextRequest) {
       }),
     },
     {
+      key: 'recipient-link',
       subject: '[TEST 6/7] Recipient link → reader',
       html: recipientLinkHtml({
         recipientFirstName: sample.recipientFirstName,
@@ -105,6 +112,7 @@ export async function POST(req: NextRequest) {
       }),
     },
     {
+      key: 'permission-granted',
       subject: '[TEST 7/7] Permission granted → grantee',
       html: permissionGrantedHtml({
         granteeFirstName: sample.recipientFirstName,
@@ -117,9 +125,17 @@ export async function POST(req: NextRequest) {
     },
   ];
 
+  const filtered = ONLY ? messages.filter((m) => m.key === ONLY) : messages;
+  if (ONLY && filtered.length === 0) {
+    return NextResponse.json({
+      error: 'unknown_only',
+      hint: `valid keys: ${messages.map((m) => m.key).join(', ')}`,
+    }, { status: 400 });
+  }
+
   const results: Array<{ subject: string; ok: boolean; id?: string; error?: string; skipped?: boolean }> = [];
-  for (let i = 0; i < messages.length; i++) {
-    const m = messages[i];
+  for (let i = 0; i < filtered.length; i++) {
+    const m = filtered[i];
     if (i > 0) await new Promise((r) => setTimeout(r, 600)); // stay under Resend's 2 req/sec
     try {
       const r = await sendEmail({ to: REVIEW_TO, subject: m.subject, html: m.html });
