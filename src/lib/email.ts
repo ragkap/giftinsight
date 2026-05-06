@@ -80,6 +80,55 @@ export function proClientNotificationHtml(args: {
   );
 }
 
+export function permissionGrantedHtml(args: {
+  granteeFirstName: string;
+  grantorName: string;
+  appBaseUrl: string;
+  maxLinksPerMonth: number;
+  maxViewsPerLink: number;
+  expiryDays: number;
+}) {
+  const base = args.appBaseUrl.replace(/\/$/, '');
+  const dashboard = `${base}/app`;
+  const analytics = `${base}/app/analytics`;
+  return shell(
+    `<p style="margin:0 0 14px;">Hi ${esc(args.granteeFirstName)},</p>
+     <p style="margin:0 0 16px;"><strong>${esc(args.grantorName)}</strong> has just allowed you to gift their Smartkarma insights — you can now share their full research with anyone, with no paywall on the recipient's side.</p>
+
+     <p style="margin:0 0 22px;">
+       <a href="${esc(dashboard)}" style="display:inline-block;background:${ACCENT};color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 20px;border-radius:10px;">Open Gift Insight →</a>
+     </p>
+
+     <p style="margin:18px 0 8px;font-size:13px;letter-spacing:.06em;color:${ACCENT};font-weight:700;text-transform:uppercase;">How it works</p>
+     <ol style="margin:0 0 16px;padding-left:18px;font-size:14px;line-height:1.65;">
+       <li>Sign in to <a href="${esc(dashboard)}" style="color:${ACCENT};">Gift Insight</a> with your existing Smartkarma credentials.</li>
+       <li>Search any of <strong>${esc(args.grantorName)}</strong>'s published insights.</li>
+       <li>Click <strong>Gift</strong> — a shareable link is copied to your clipboard. Drop it into Slack, email, or WhatsApp.</li>
+       <li>The recipient enters their business email and reads the full insight. <strong>They don't need a Smartkarma account.</strong></li>
+     </ol>
+
+     <p style="margin:18px 0 8px;font-size:13px;letter-spacing:.06em;color:${ACCENT};font-weight:700;text-transform:uppercase;">What you can gift</p>
+     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px;border:1px solid #d6f1ef;border-radius:10px;overflow:hidden;width:100%;font-size:14px;">
+       <tr style="background:#effaf9;">
+         <td style="padding:10px 14px;color:#1a1a1a;"><strong>${args.maxLinksPerMonth}</strong> gift links per month</td>
+       </tr>
+       <tr><td style="padding:10px 14px;border-top:1px solid #d6f1ef;"><strong>${args.maxViewsPerLink}</strong> recipient views per link</td></tr>
+       <tr><td style="padding:10px 14px;border-top:1px solid #d6f1ef;"><strong>${args.expiryDays} days</strong> before each link expires</td></tr>
+     </table>
+
+     <p style="margin:18px 0 8px;font-size:13px;letter-spacing:.06em;color:${ACCENT};font-weight:700;text-transform:uppercase;">Stay in the loop</p>
+     <ul style="margin:0 0 16px;padding-left:18px;font-size:14px;line-height:1.65;">
+       <li>Your <a href="${esc(analytics)}" style="color:${ACCENT};font-weight:600;">dashboard</a> shows who's opened each gift, who said thanks, and your top readers.</li>
+       <li>You'll get an email <strong>every time someone reads a gift you sent</strong> — easy to follow up the same hour.</li>
+     </ul>
+
+     <p style="margin:22px 0 0;padding:14px 16px;background:#fafafa;border-left:3px solid ${ACCENT};border-radius:0 6px 6px 0;font-size:13px;color:#525252;">
+       <strong style="color:#1a1a1a;">Heads up:</strong> Gift Insight is currently in beta as a standalone product. It'll soon be fully integrated into the main Smartkarma platform.
+     </p>`,
+    `${args.grantorName} has allowed you to gift their Smartkarma insights.`,
+  );
+}
+
 export function gifterWelcomeHtml(args: {
   firstName: string;
   appBaseUrl: string;

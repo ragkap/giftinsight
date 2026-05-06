@@ -61,13 +61,17 @@ export async function setOpenToAll(authorId: number, openToAll: boolean) {
   );
 }
 
-export async function grantPermission(authorId: number, gifterId: number) {
-  await writeQuery(
+/** Returns true if a NEW row was inserted (so callers can fire a one-time
+ *  notification); false if the (author, gifter) pair already existed. */
+export async function grantPermission(authorId: number, gifterId: number): Promise<boolean> {
+  const rows = await writeQuery(
     `INSERT INTO gift_permission_grants (author_account_id, gifter_account_id)
      VALUES ($1, $2)
-     ON CONFLICT DO NOTHING`,
+     ON CONFLICT DO NOTHING
+     RETURNING author_account_id`,
     [authorId, gifterId],
   );
+  return rows.length > 0;
 }
 
 export async function revokePermission(authorId: number, gifterId: number) {

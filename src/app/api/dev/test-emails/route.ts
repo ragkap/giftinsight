@@ -10,6 +10,7 @@ import {
   trialInterestHtml,
   gifterWelcomeHtml,
   recipientLinkHtml,
+  permissionGrantedHtml,
 } from '@/lib/email';
 import { env } from '@/lib/env';
 
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   const messages: Array<{ subject: string; html: string }> = [
     {
-      subject: '[TEST 1/6] Read notification → gifter',
+      subject: '[TEST 1/7] Read notification → gifter',
       html: readNotificationHtml({
         gifterFirstName: sample.gifterFirstName,
         recipientFirstName: sample.recipientFirstName,
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
       }),
     },
     {
-      subject: '[TEST 2/6] Pro-client redirect → gifter',
+      subject: '[TEST 2/7] Pro-client redirect → gifter',
       html: proClientNotificationHtml({
         gifterFirstName: sample.gifterFirstName,
         recipientFirstName: sample.recipientFirstName,
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
       }),
     },
     {
-      subject: '[TEST 3/6] Thanks → insight author',
+      subject: '[TEST 3/7] Thanks → insight author',
       html: thanksToAuthorHtml({
         authorFirstName: sample.authorFirstName,
         gifterFirstName: sample.gifterFirstName,
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
       }),
     },
     {
-      subject: `[TEST 4/6] Trial intent → ${e.SALES_EMAIL}`,
+      subject: `[TEST 4/7] Trial intent → ${e.SALES_EMAIL}`,
       html: trialInterestHtml({
         recipientFirstName: sample.recipientFirstName,
         recipientLastName: sample.recipientLastName,
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
       }),
     },
     {
-      subject: '[TEST 5/6] Welcome → first-time gifter',
+      subject: '[TEST 5/7] Welcome → first-time gifter',
       html: gifterWelcomeHtml({
         firstName: sample.gifterFirstName,
         appBaseUrl: e.APP_BASE_URL,
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
       }),
     },
     {
-      subject: '[TEST 6/6] Recipient link → reader',
+      subject: '[TEST 6/7] Recipient link → reader',
       html: recipientLinkHtml({
         recipientFirstName: sample.recipientFirstName,
         gifterName: sample.gifterFullName,
@@ -101,6 +102,17 @@ export async function POST(req: NextRequest) {
         insightAuthor: sample.insightAuthor,
         giftLinkUrl: sample.giftLinkUrl,
         expiresAt: sample.expiresAt,
+      }),
+    },
+    {
+      subject: '[TEST 7/7] Permission granted → grantee',
+      html: permissionGrantedHtml({
+        granteeFirstName: sample.recipientFirstName,
+        grantorName: sample.gifterFullName,
+        appBaseUrl: e.APP_BASE_URL,
+        maxLinksPerMonth: e.GIFT_MAX_LINKS_PER_GIFTER_PER_MONTH,
+        maxViewsPerLink: e.GIFT_MAX_VIEWS_PER_LINK,
+        expiryDays: e.GIFT_LINK_EXPIRY_DAYS,
       }),
     },
   ];

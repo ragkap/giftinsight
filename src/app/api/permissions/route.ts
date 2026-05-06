@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { getSession } from '@/lib/auth';
 import { getPermissionState, grantPermission, revokePermission, setOpenToAll } from '@/lib/permissions';
 import { getAccountsByIds } from '@/lib/insights';
+import { sendEmail, permissionGrantedHtml } from '@/lib/email';
+import { env } from '@/lib/env';
 
 export const runtime = 'nodejs';
 
@@ -46,10 +48,16 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: 'invalid_input' }, { status: 400 });
 
   switch (parsed.data.action) {
-    case 'grant':
+    case 'grant': {
       if (parsed.data.gifterId === session.accountId) return NextResponse.json({ error: 'self' }, { status: 400 });
-      await grantPermission(session.accountId, parsed.data.gifterId);
+      const inserted = await grantPermission(session.accountId, parsed.data.gifterId);
+      if (inserted) {
+        // Notify the new grantee (fire-and-forget; never block the API response).
+        notifyGrantee(parsed.data.gifterId, session.name ?? session.firstName ?? session.email)
+          .catch((err) => console.warn('[permission-granted-email] failed:', (err as Error).message));
+      }
       break;
+    }
     case 'revoke':
       await revokePermission(session.accountId, parsed.data.gifterId);
       break;
@@ -58,4 +66,22 @@ export async function POST(req: NextRequest) {
       break;
   }
   return NextResponse.json({ ok: true });
+}
+
+async function notifyGrantee(granteeId: number, grantorName: string) {
+  const [grantee] = await getAccountsByIds([granteeId]);
+  if (!grantee?.email) return;
+  const e = env();
+  await sendEmail({
+    to: grantee.email,
+    subject: `${grantorName} has invited you to gift their Smartkarma insights`,
+    html: permissionGrantedHtml({
+      granteeFirstName: grantee.first_name ?? grantee.name?.split(' ')[0] ?? 'there',
+      grantorName,
+      appBaseUrl: e.APP_BASE_URL,
+      maxLinksPerMonth: e.GIFT_MAX_LINKS_PER_GIFTER_PER_MONTH,
+      maxViewsPerLink: e.GIFT_MAX_VIEWS_PER_LINK,
+      expiryDays: e.GIFT_LINK_EXPIRY_DAYS,
+    }),
+  });
 }
