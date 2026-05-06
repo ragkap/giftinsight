@@ -6,7 +6,8 @@ const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3000';
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: 'Gift Insight — Smartkarma',
-  description: 'Gift a Smartkarma insight to a colleague.',
+  description:
+    'Share a full Smartkarma insight with anyone — no paywall, no Smartkarma account required for your recipient.',
   robots: { index: false, follow: false },
   icons: {
     icon: '/icon.png',
