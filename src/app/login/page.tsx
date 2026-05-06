@@ -48,7 +48,14 @@ export default async function LoginPage() {
               },
               {
                 title: 'They read the full insight, no paywall',
-                body: 'Your recipient enters their business email — no Smartkarma account required — and reads the entire piece.',
+                body: (
+                  <>
+                    Your recipient enters their business email —{' '}
+                    <mark className="bg-accent-100 text-ink-900 font-semibold rounded px-1 py-0.5 [text-decoration:none]">
+                      no Smartkarma account required — and reads the entire piece.
+                    </mark>
+                  </>
+                ),
               },
               {
                 title: 'Track opens, thanks & follow-ups',
