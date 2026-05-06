@@ -27,6 +27,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
           <nav className="flex items-center gap-3 md:gap-5 text-sm text-ink-700">
             <Link href="/admin" className="hover:text-accent">Overview</Link>
+            <Link href="/admin/docs" className="hover:text-accent">API docs</Link>
             <Link href="/app" className="hover:text-accent">Switch to Gift</Link>
           </nav>
           <div className="ml-auto flex items-center gap-3 shrink-0">
