@@ -1,0 +1,800 @@
+openapi: 3.1.0
+info:
+  title: Smartkarma Gift Insight API
+  version: 0.1.0
+  description: |
+    HTTP API for Gift Insight — Smartkarma's standalone tool for sharing
+    full insights with non-clients via tokenised links.
+
+    All endpoints are mounted under the running app's base URL
+    (`APP_BASE_URL`, e.g. `https://giftinsight.smartkarma.com`).
+
+    Authentication is cookie-based via `sk_session` (HttpOnly JWT).
+    `POST /api/auth/login` and `POST /api/admin/login` set the cookie;
+    `POST /api/auth/logout` clears it. Routes under the recipient flow
+    (`/api/recipient/*`) and `/api/trending` are public.
+
+servers:
+  - url: '{appBaseUrl}'
+    description: Application base URL
+    variables:
+      appBaseUrl:
+        default: http://localhost:3001
+
+tags:
+  - name: Auth
+    description: Sign in / sign out (Smartkarma credentials)
+  - name: Search
+    description: Search insights to gift, search users to grant
+  - name: Permissions
+    description: Insight Provider permission management
+  - name: Gifts
+    description: Create gift links and read their analytics
+  - name: Recipient
+    description: Public endpoints driving the gift-link reading flow
+  - name: Read-side
+    description: Trending insights and the gifter's analytics dashboard
+  - name: Admin
+    description: Allowlisted admin sign-in
+  - name: Dev
+    description: Development utilities (disabled in production)
+
+components:
+  securitySchemes:
+    SessionCookie:
+      type: apiKey
+      in: cookie
+      name: sk_session
+      description: |
+        HttpOnly JWT cookie set on successful sign-in. Required for any
+        non-public endpoint. Some endpoints additionally require
+        Insight-Provider or admin status — those return 403 if missing.
+
+  responses:
+    Unauthorized:
+      description: No valid session cookie.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example: { error: unauthorized }
+    Forbidden:
+      description: Authenticated but lacking the required role.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example: { error: forbidden }
+    BadRequest:
+      description: Malformed JSON body or invalid input.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example: { error: invalid_input }
+
+  schemas:
+    Ok:
+      type: object
+      additionalProperties: false
+      properties:
+        ok: { type: boolean, const: true }
+      required: [ok]
+
+    ErrorEnvelope:
+      type: object
+      additionalProperties: false
+      properties:
+        error: { type: string }
+        message: { type: string }
+      required: [error]
+
+    InsightHit:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: integer, example: 234725 }
+        tagline: { type: string, example: "What's New(s) in Amsterdam - 5 May (Besi | bnode)" }
+        slug: { type: string, example: 'whats-news-in-amsterdam-5-may-besi-bnode' }
+        publishedAt: { type: string, format: date-time, nullable: true }
+        authorId: { type: integer, example: 25 }
+        authorName: { type: string, example: 'Travis Lundy' }
+        isOwn: { type: boolean }
+        entity: { type: string, nullable: true, example: 'BE Semiconductor Industries NV' }
+        ticker: { type: string, nullable: true, example: 'BESI NA' }
+      required: [id, tagline, slug, authorId, authorName, isOwn]
+
+    UserHit:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        company: { type: string, nullable: true }
+        isInsightProvider: { type: boolean }
+      required: [id, name, isInsightProvider]
+
+    Quota:
+      type: object
+      additionalProperties: false
+      properties:
+        used: { type: integer }
+        max: { type: integer }
+        remaining: { type: integer }
+        yearMonth: { type: string, example: '2026-05' }
+      required: [used, max, remaining, yearMonth]
+
+    GiftLinkSummary:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: integer }
+        token: { type: string }
+        url: { type: string, format: uri }
+        insightId: { type: integer }
+        slug: { type: string }
+        tagline: { type: string }
+        authorName: { type: string }
+        maxViews: { type: integer }
+        viewCount: { type: integer }
+        expiresAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+      required: [id, token, url, tagline, maxViews, viewCount, expiresAt, createdAt]
+
+    GiftLinkDetail:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: integer }
+        token: { type: string }
+        insight_tagline: { type: string }
+        insight_slug: { type: string }
+        max_views: { type: integer }
+        view_count: { type: integer }
+        expires_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+      required: [id, token, insight_tagline, max_views, view_count, expires_at, created_at]
+
+    GiftView:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: integer }
+        recipient_first_name: { type: string }
+        recipient_last_name: { type: string }
+        recipient_email: { type: string, format: email }
+        thanked_at: { type: string, format: date-time, nullable: true }
+        viewed_at: { type: string, format: date-time }
+        is_pro_client: { type: boolean }
+      required: [id, recipient_first_name, recipient_last_name, recipient_email, viewed_at, is_pro_client]
+
+    PermissionState:
+      type: object
+      additionalProperties: false
+      properties:
+        openToAll: { type: boolean }
+        grants:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            properties:
+              id: { type: integer }
+              name: { type: string }
+              company: { type: string, nullable: true }
+              createdAt: { type: string, format: date-time }
+            required: [id, name, createdAt]
+      required: [openToAll, grants]
+
+    PermissionAction:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          properties:
+            action: { type: string, const: grant }
+            gifterId: { type: integer }
+          required: [action, gifterId]
+        - type: object
+          additionalProperties: false
+          properties:
+            action: { type: string, const: revoke }
+            gifterId: { type: integer }
+          required: [action, gifterId]
+        - type: object
+          additionalProperties: false
+          properties:
+            action: { type: string, const: open }
+            openToAll: { type: boolean }
+          required: [action, openToAll]
+
+    LoginBody:
+      type: object
+      additionalProperties: false
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 1 }
+      required: [email, password]
+
+    LoginOk:
+      type: object
+      additionalProperties: false
+      properties:
+        ok: { type: boolean, const: true }
+        isInsightProvider: { type: boolean }
+      required: [ok]
+
+    IdentifyBody:
+      type: object
+      additionalProperties: false
+      properties:
+        token: { type: string, minLength: 8 }
+        firstName: { type: string, minLength: 1, maxLength: 60 }
+        lastName: { type: string, minLength: 1, maxLength: 60 }
+        email: { type: string, format: email, maxLength: 120 }
+      required: [token, firstName, lastName, email]
+
+    IdentifyResult:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          properties:
+            kind: { type: string, const: pro_redirect }
+            redirectTo: { type: string, format: uri }
+            message: { type: string }
+          required: [kind, redirectTo, message]
+        - type: object
+          additionalProperties: false
+          properties:
+            kind: { type: string, const: inline_read }
+            insightId: { type: integer }
+            viewId: { type: integer }
+            readCount: { type: integer }
+            showLongReaderModal: { type: boolean }
+            gifterName: { type: string }
+          required: [kind, insightId, viewId, readCount, showLongReaderModal, gifterName]
+
+    TrendingInsight:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { oneOf: [{ type: integer }, { type: string }] }
+        tagline: { type: string }
+        url: { type: string, format: uri }
+        author: { type: string, nullable: true }
+      required: [id, tagline, url]
+
+    AnalyticsLink:
+      type: object
+      additionalProperties: false
+      properties:
+        id: { type: integer }
+        token: { type: string }
+        insight_id: { type: integer }
+        insight_slug: { type: string }
+        insight_tagline: { type: string }
+        max_views: { type: integer }
+        view_count: { type: integer }
+        expires_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+        thanks_count: { type: integer }
+        total_views: { type: integer }
+      required: [id, token, insight_tagline, max_views, view_count, expires_at]
+
+    TopReader:
+      type: object
+      additionalProperties: false
+      properties:
+        recipient_email: { type: string, format: email }
+        recipient_first_name: { type: string }
+        recipient_last_name: { type: string }
+        reads: { type: integer }
+        thanks: { type: integer }
+        last_read: { type: string, format: date-time }
+      required: [recipient_email, recipient_first_name, recipient_last_name, reads, thanks, last_read]
+
+paths:
+  # ───────────────────────────────────────── Auth ─────────────────────────────────────────
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Sign in with Smartkarma credentials
+      description: |
+        Validates email + password against the production Devise
+        `accounts.encrypted_password`, then issues a `sk_session` HttpOnly
+        cookie. On the user's first-ever sign-in, fires the welcome
+        email (fire-and-forget; never blocks the response).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginBody' }
+      responses:
+        '200':
+          description: Logged in. `sk_session` cookie set.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginOk' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401':
+          description: Wrong credentials, account locked, or suspended.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example: { error: invalid_credentials }
+        '500':
+          description: Internal error (logged with stack on the server).
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Clear the session cookie
+      responses:
+        '200':
+          description: Cookie cleared.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+
+  /api/admin/login:
+    post:
+      tags: [Auth, Admin]
+      summary: Sign in to the admin area
+      description: |
+        Validates Smartkarma credentials AND requires the email to be in
+        the comma-separated `ADMIN_EMAILS` env list (defaults to
+        `rk@smartkarma.com,sv@smartkarma.com`). Sets the same `sk_session`
+        cookie as `/api/auth/login`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginBody' }
+      responses:
+        '200':
+          description: Logged in.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401':
+          description: Wrong password (for an allowlisted email).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example: { error: invalid_credentials }
+        '403':
+          description: Email is not in `ADMIN_EMAILS`. Returned regardless of password validity.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example: { error: forbidden }
+        '500': { description: Internal error. }
+
+  # ─────────────────────────────────────── Search ───────────────────────────────────────
+  /api/search/insights:
+    get:
+      tags: [Search]
+      summary: Search insights you're allowed to gift
+      description: |
+        Searches across `insights.tagline` (Postgres full-text via the
+        `tsv` index), the primary entity's `company_name` and
+        `bloomberg_ticker`, and the author's name. Restricted to
+        published insights from the last `INSIGHT_SEARCH_MAX_AGE_YEARS`
+        (default 2y). Author scope is the union of the gifter themselves,
+        any author who flipped `open_to_all`, any author who explicitly
+        granted this gifter, and (for `@smartkarma.com` users) all
+        authors. Pasting a `smartkarma.com/insights/{slug}` URL takes a
+        slug-lookup short-circuit instead of fuzzy search.
+      security: [{ SessionCookie: [] }]
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema: { type: string }
+          description: Free text or a Smartkarma insight URL.
+      responses:
+        '200':
+          description: Search hits (max 25). May include a notice for the URL-paste flow.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  results:
+                    type: array
+                    items: { $ref: '#/components/schemas/InsightHit' }
+                  notice:
+                    type: string
+                    enum: [insight_not_found, not_permitted]
+                required: [results]
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/search/users:
+    get:
+      tags: [Search]
+      summary: (IP only) typeahead users to grant gifting rights
+      description: |
+        Returns up to 10 active Insight Providers (published in the last
+        12 months) and active Professional clients (`is_client=true,
+        client_type='professional', accounts.activated=true`). Excludes
+        `@smartkarma.com` employees because they have the global
+        gift bypass. Caller must be an Insight Provider.
+      security: [{ SessionCookie: [] }]
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema: { type: string, minLength: 2 }
+      responses:
+        '200':
+          description: Hits.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  results:
+                    type: array
+                    items: { $ref: '#/components/schemas/UserHit' }
+                required: [results]
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ───────────────────────────────────── Permissions ─────────────────────────────────────
+  /api/permissions:
+    get:
+      tags: [Permissions]
+      summary: (IP only) read your gifting permission state
+      security: [{ SessionCookie: [] }]
+      responses:
+        '200':
+          description: Current permission state.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PermissionState' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Permissions]
+      summary: (IP only) grant / revoke / open-to-all
+      description: |
+        First time a `(grantor, grantee)` pair is created (action=grant),
+        sends an email to the new grantee describing the new privilege.
+      security: [{ SessionCookie: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PermissionAction' }
+      responses:
+        '200':
+          description: Action applied.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Ok' }
+        '400':
+          description: |
+            `invalid_json`, `invalid_input`, or `self` (you can't grant
+            permission to yourself).
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ─────────────────────────────────────── Gifts ───────────────────────────────────────
+  /api/gifts:
+    get:
+      tags: [Gifts]
+      summary: List your gift links + remaining quota
+      security: [{ SessionCookie: [] }]
+      responses:
+        '200':
+          description: Your most-recent 200 gift links.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  quota: { $ref: '#/components/schemas/Quota' }
+                  links:
+                    type: array
+                    items: { $ref: '#/components/schemas/GiftLinkSummary' }
+                required: [quota, links]
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Gifts]
+      summary: Create a new gift link
+      description: |
+        Atomically reserves one quota slot, generates a 22-char base62
+        token, and returns the full URL plus expiry. The link expires in
+        `GIFT_LINK_EXPIRY_DAYS` and accepts `GIFT_MAX_VIEWS_PER_LINK`
+        unique recipients.
+      security: [{ SessionCookie: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                insightId: { type: integer }
+              required: [insightId]
+      responses:
+        '200':
+          description: Link created.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  ok: { type: boolean, const: true }
+                  id: { type: integer }
+                  token: { type: string }
+                  url: { type: string, format: uri }
+                  expiresAt: { type: string, format: date-time }
+                  quotaUsed: { type: integer }
+                  quotaMax: { type: integer }
+                required: [ok, id, token, url, expiresAt, quotaUsed, quotaMax]
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403':
+          description: This author hasn't allowed you to gift their insights.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example: { error: not_permitted }
+        '404':
+          description: Insight does not exist or is not published.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example: { error: insight_not_found }
+        '429':
+          description: Monthly cap reached.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  error: { type: string, const: quota_exceeded }
+                  max: { type: integer }
+                required: [error, max]
+
+  /api/gifts/{id}:
+    get:
+      tags: [Gifts]
+      summary: Detail + views for one of your gift links
+      security: [{ SessionCookie: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Link header + per-recipient views.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  link: { $ref: '#/components/schemas/GiftLinkDetail' }
+                  views:
+                    type: array
+                    items: { $ref: '#/components/schemas/GiftView' }
+                required: [link, views]
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: Link not found, or not yours.
+
+  # ───────────────────────────────────── Recipient ─────────────────────────────────────
+  /api/recipient/identify:
+    post:
+      tags: [Recipient]
+      summary: 'Public: recipient submits the identify form'
+      description: |
+        Validates the names + business email (free-mail providers like
+        Gmail/Yahoo/Hotmail are rejected). On first visit per recipient
+        per link, increments `gift_links.view_count`, writes a
+        `gift_views` row, sets `sk_gift_*` cookies for autofill, and
+        emails the gifter. If the email belongs to an active Pro
+        Smartkarma client, returns a `pro_redirect` instead and emails
+        the gifter to that effect (no view-count consumed).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IdentifyBody' }
+      responses:
+        '200':
+          description: |
+            Either `pro_redirect` (existing client → bounce to
+            smartkarma.com) or `inline_read` (render the insight).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IdentifyResult' }
+        '400':
+          description: |
+            `invalid_first_name`, `invalid_last_name`, `not_business_email`,
+            `invalid_input`, or `invalid_json`.
+        '404':
+          description: Token does not match any gift link.
+        '410':
+          description: Link expired or view-cap exhausted (`expired` / `view_limit`).
+
+  /api/recipient/thanks:
+    post:
+      tags: [Recipient]
+      summary: 'Public: recipient clicks Thanks'
+      description: |
+        Stamps `gift_views.thanked_at` (idempotent) and emails the
+        insight's author. Subsequent thanks for the same view are
+        no-ops.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                viewId: { type: integer }
+              required: [viewId]
+      responses:
+        '200':
+          description: Stamped.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  ok: { type: boolean, const: true }
+                  thankedAt: { type: string, format: date-time, nullable: true }
+                required: [ok]
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404':
+          description: View not found.
+
+  /api/recipient/trial-interest:
+    post:
+      tags: [Recipient]
+      summary: 'Public: recipient clicks Start free trial'
+      description: |
+        Stamps `gift_views.trial_interest_at` once per view; on the first
+        click emails `SALES_EMAIL` with the recipient's name, the
+        gifter, and the insight tagline so sales can follow up. Returns
+        the trial-signup URL the client should NOT redirect to (the UI
+        shows an in-app confirmation modal instead).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                viewId: { type: integer }
+              required: [viewId]
+      responses:
+        '200':
+          description: Intent recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  ok: { type: boolean, const: true }
+                  redirectTo: { type: string, format: uri }
+                  alreadyEmailed:
+                    type: boolean
+                    description: '`true` if sales was already emailed for this view (no second email fires).'
+                required: [ok, redirectTo, alreadyEmailed]
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404':
+          description: View not found.
+
+  # ───────────────────────────────────── Read-side ─────────────────────────────────────
+  /api/trending:
+    get:
+      tags: [Read-side]
+      summary: 'Cached: top trending insights from smartkarma.com'
+      description: |
+        Proxies `SMARTKARMA_TRENDING_URL` (JSON:API) with a 5-minute
+        in-memory + ISR cache. Used by the recipient's bottom CTA and
+        the long-reader upsell modal.
+      security: []
+      responses:
+        '200':
+          description: Up to 10 trending insights.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  trending:
+                    type: array
+                    items: { $ref: '#/components/schemas/TrendingInsight' }
+                required: [trending]
+
+  /api/analytics:
+    get:
+      tags: [Read-side]
+      summary: Your gift links rolled up + your top readers
+      security: [{ SessionCookie: [] }]
+      responses:
+        '200':
+          description: Aggregated analytics.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  links:
+                    type: array
+                    items: { $ref: '#/components/schemas/AnalyticsLink' }
+                  topReaders:
+                    type: array
+                    items: { $ref: '#/components/schemas/TopReader' }
+                required: [links, topReaders]
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ─────────────────────────────────────── Dev ───────────────────────────────────────
+  /api/dev/test-emails:
+    post:
+      tags: [Dev]
+      summary: Fire one (or all) of the seven email templates with sample data
+      description: |
+        Disabled in production (`NODE_ENV='production'` ⇒ 403). Pass
+        `?to={email}` to override the recipient (defaults to
+        `rk@smartkarma.com`); pass `?only={key}` to fire just one
+        template (`read | pro | thanks | trial | welcome | recipient-link
+        | permission-granted`).
+      security: []
+      parameters:
+        - in: query
+          name: to
+          schema: { type: string, format: email }
+        - in: query
+          name: only
+          schema:
+            type: string
+            enum: [read, pro, thanks, trial, welcome, recipient-link, permission-granted]
+      responses:
+        '200':
+          description: Per-template send result.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  to: { type: string }
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      properties:
+                        subject: { type: string }
+                        ok: { type: boolean }
+                        id: { type: string, description: 'Resend message id' }
+                        error: { type: string }
+                        skipped: { type: boolean }
+                      required: [subject, ok]
+                required: [to, results]
+        '400':
+          description: Unknown `?only=` key.
+        '403':
+          description: NODE_ENV=production.
+
+security: []
