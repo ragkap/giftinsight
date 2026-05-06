@@ -20,8 +20,11 @@ const KIND_BADGE: Record<ActivityKind, { label: string; cls: string }> = {
 
 type SortKey = 'kind' | 'actor' | 'detail' | 'at';
 
+const KIND_ORDER: ActivityKind[] = ['link_created', 'view', 'thanks', 'trial_intent'];
+
 export function ActivityTable({ rows }: { rows: ActivityRow[] }) {
   const [q, setQ] = useState('');
+  const [activeKinds, setActiveKinds] = useState<Set<ActivityKind>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>('at');
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
 
@@ -33,16 +36,35 @@ export function ActivityTable({ rows }: { rows: ActivityRow[] }) {
     }
   }
 
+  function toggleKind(k: ActivityKind) {
+    setActiveKinds((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  }
+
+  const kindCounts = useMemo(() => {
+    const counts: Record<ActivityKind, number> = {
+      link_created: 0, view: 0, thanks: 0, trial_intent: 0,
+    };
+    for (const r of rows) counts[r.kind]++;
+    return counts;
+  }, [rows]);
+
   const filteredSorted = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    const filtered = needle
-      ? rows.filter((r) =>
-          r.actor.toLowerCase().includes(needle) ||
-          r.detail.toLowerCase().includes(needle) ||
-          KIND_BADGE[r.kind].label.toLowerCase().includes(needle) ||
-          r.kind.toLowerCase().includes(needle),
-        )
-      : rows.slice();
+    const filtered = rows.filter((r) => {
+      if (activeKinds.size > 0 && !activeKinds.has(r.kind)) return false;
+      if (!needle) return true;
+      return (
+        r.actor.toLowerCase().includes(needle) ||
+        r.detail.toLowerCase().includes(needle) ||
+        KIND_BADGE[r.kind].label.toLowerCase().includes(needle) ||
+        r.kind.toLowerCase().includes(needle)
+      );
+    });
     filtered.sort((a, b) => {
       let cmp = 0;
       if (sortKey === 'kind')   cmp = a.kind.localeCompare(b.kind);
@@ -52,7 +74,7 @@ export function ActivityTable({ rows }: { rows: ActivityRow[] }) {
       return dir === 'asc' ? cmp : -cmp;
     });
     return filtered;
-  }, [rows, q, sortKey, dir]);
+  }, [rows, q, activeKinds, sortKey, dir]);
 
   const headerCls = (key: SortKey) =>
     `font-medium px-4 py-2 cursor-pointer select-none hover:text-ink-900 ${
@@ -61,8 +83,43 @@ export function ActivityTable({ rows }: { rows: ActivityRow[] }) {
   const arrow = (key: SortKey) =>
     sortKey === key ? <span className="ml-1 text-accent">{dir === 'asc' ? '↑' : '↓'}</span> : null;
 
+  const filterActive = q.trim().length > 0 || activeKinds.size > 0;
+
   return (
     <div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {KIND_ORDER.map((k) => {
+          const badge = KIND_BADGE[k];
+          const active = activeKinds.has(k);
+          const count = kindCounts[k];
+          return (
+            <button
+              key={k}
+              type="button"
+              onClick={() => toggleKind(k)}
+              aria-pressed={active}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold tracking-wider transition ${
+                active
+                  ? `${badge.cls} ring-2 ring-offset-1 ring-accent/40`
+                  : `${badge.cls} opacity-70 hover:opacity-100`
+              }`}
+            >
+              <span>{badge.label}</span>
+              <span className="font-semibold opacity-80 tabular-nums">{count}</span>
+            </button>
+          );
+        })}
+        {activeKinds.size > 0 && (
+          <button
+            type="button"
+            onClick={() => setActiveKinds(new Set())}
+            className="text-[11px] text-ink-500 hover:text-ink-900 underline underline-offset-2 ml-1"
+          >
+            Clear types
+          </button>
+        )}
+      </div>
+
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="relative w-full max-w-xs">
           <input
@@ -84,7 +141,7 @@ export function ActivityTable({ rows }: { rows: ActivityRow[] }) {
           )}
         </div>
         <div className="text-xs text-ink-500 tabular-nums shrink-0">
-          {filteredSorted.length}{q && ` of ${rows.length}`} events
+          {filteredSorted.length}{filterActive && ` of ${rows.length}`} events
         </div>
       </div>
 
@@ -102,7 +159,7 @@ export function ActivityTable({ rows }: { rows: ActivityRow[] }) {
             {filteredSorted.length === 0 && (
               <tr>
                 <td className="px-4 py-6 text-center text-sm text-ink-500" colSpan={4}>
-                  {q ? 'No matching events.' : 'No activity yet.'}
+                  {filterActive ? 'No matching events.' : 'No activity yet.'}
                 </td>
               </tr>
             )}
