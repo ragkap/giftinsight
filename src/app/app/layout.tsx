@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getSession } from '@/lib/auth';
 import { LogoutButton } from '@/components/LogoutButton';
-import { BrandMark } from '@/components/icons';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +14,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header className="border-b border-ink-100 bg-white sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 md:px-6 h-14 flex items-center gap-3 md:gap-6">
           <Link href="/app" aria-label="Smartkarma — Gift" className="inline-flex items-center shrink-0">
-            <BrandMark height={24} />
+            <img
+              src="/brand.png"
+              alt="Smartkarma"
+              width={28}
+              height={28}
+              className="rounded-[5px] block"
+            />
           </Link>
           <nav className="flex items-center gap-3 md:gap-5 text-sm text-ink-700">
             <Link href="/app" className="hover:text-accent">Gift</Link>

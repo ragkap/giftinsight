@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { getSession } from '@/lib/auth';
 import { isAdminEmail } from '@/lib/admin';
 import { LogoutButton } from '@/components/LogoutButton';
-import { BrandMark } from '@/components/icons';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +16,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <header className="border-b border-ink-100 bg-white sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-14 flex items-center gap-3 md:gap-6">
           <Link href="/admin" aria-label="Smartkarma — Gift Insight admin" className="inline-flex items-center gap-2 shrink-0">
-            <BrandMark height={24} />
+            <img
+              src="/brand.png"
+              alt="Smartkarma"
+              width={28}
+              height={28}
+              className="rounded-[5px] block"
+            />
             <span className="text-[10px] tracking-[0.18em] text-ink-500 font-bold uppercase">Admin</span>
           </Link>
           <nav className="flex items-center gap-3 md:gap-5 text-sm text-ink-700">
