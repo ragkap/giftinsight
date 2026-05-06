@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getAllowedAuthorIds } from '@/lib/permissions';
-import { searchInsights } from '@/lib/insights';
+import { getInsightBySlug, searchInsights, type InsightHit } from '@/lib/insights';
 
 export const runtime = 'nodejs';
+
+// Matches a Smartkarma insight URL in any reasonable form, e.g.:
+//   https://www.smartkarma.com/insights/regis-resources-rrl-au...
+//   smartkarma.com/insights/foo
+//   /insights/foo
+//   even just  insights/foo
+const SLUG_RE = /(?:^|\/)insights\/([a-z0-9-]+)/i;
+
+function extractSlug(q: string): string | null {
+  const m = q.match(SLUG_RE);
+  return m ? m[1].toLowerCase() : null;
+}
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -13,7 +25,27 @@ export async function GET(req: NextRequest) {
   if (!q) return NextResponse.json({ results: [] });
 
   const allowed = await getAllowedAuthorIds(session.accountId, session.email);
-  const results = await searchInsights({ q, allowedAuthorIds: allowed, limit: 25 });
+
+  // URL-paste path: if the query looks like a Smartkarma insight URL, do a
+  // slug lookup and return that single insight (or empty if the user isn't
+  // allowed to gift its author).
+  const slug = extractSlug(q);
+  let results: InsightHit[];
+  if (slug) {
+    const hit = await getInsightBySlug(slug);
+    if (!hit) {
+      return NextResponse.json({ results: [], notice: 'insight_not_found' });
+    }
+    const isAllowedAuthor =
+      allowed === null /* employee bypass */ ||
+      allowed.includes(hit.author_account_id);
+    if (!isAllowedAuthor) {
+      return NextResponse.json({ results: [], notice: 'not_permitted' });
+    }
+    results = [hit];
+  } else {
+    results = await searchInsights({ q, allowedAuthorIds: allowed, limit: 25 });
+  }
 
   return NextResponse.json({
     results: results.map((r) => ({

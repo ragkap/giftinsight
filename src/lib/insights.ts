@@ -85,6 +85,33 @@ export async function searchInsights(args: {
   );
 }
 
+/**
+ * Look up a single insight by slug for the gift-search "paste a URL" flow.
+ * Same shape as searchInsights, plus a 2-year recency cutoff.
+ */
+export async function getInsightBySlug(slug: string): Promise<InsightHit | null> {
+  const trimmed = slug.trim();
+  if (!trimmed) return null;
+  const maxAgeYears = env().INSIGHT_SEARCH_MAX_AGE_YEARS;
+  const rows = await readQuery<InsightHit>(
+    `SELECT i.id, i.tagline, i.slug, i.published_at,
+            i.account_id  AS author_account_id,
+            a.name        AS author_name,
+            a.first_name  AS author_first_name,
+            e.company_name AS entity_name,
+            e.bloomberg_ticker
+     FROM insights i
+     JOIN accounts a ON a.id = i.account_id
+     LEFT JOIN entities e ON e.id = i.primary_entity_id
+     WHERE i.aasm_state = 'published'
+       AND i.slug = $1
+       AND i.published_at >= NOW() - make_interval(years => $2::int)
+     LIMIT 1`,
+    [trimmed, maxAgeYears],
+  );
+  return rows[0] ?? null;
+}
+
 export async function getInsightForGifting(insightId: number) {
   const rows = await readQuery<{
     id: number;

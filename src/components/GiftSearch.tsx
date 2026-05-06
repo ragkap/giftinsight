@@ -16,6 +16,7 @@ type Result = {
 export function GiftSearch() {
   const [q, setQ] = useState('');
   const [results, setResults] = useState<Result[] | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [giftingId, setGiftingId] = useState<number | null>(null);
   const [generated, setGenerated] = useState<{ url: string; tagline: string } | null>(null);
@@ -34,7 +35,7 @@ export function GiftSearch() {
 
   useEffect(() => {
     const trimmed = q.trim();
-    if (!trimmed) { setResults(null); setLoading(false); return; }
+    if (!trimmed) { setResults(null); setNotice(null); setLoading(false); return; }
     setLoading(true);
     abort.current?.abort();
     const ac = new AbortController();
@@ -43,10 +44,11 @@ export function GiftSearch() {
       try {
         const r = await fetch(`/api/search/insights?q=${encodeURIComponent(trimmed)}`, { signal: ac.signal });
         if (!r.ok) throw new Error(String(r.status));
-        const j = await r.json();
+        const j = (await r.json()) as { results: Result[]; notice?: string };
         setResults(j.results);
+        setNotice(j.notice ?? null);
       } catch (e) {
-        if ((e as Error).name !== 'AbortError') setResults([]);
+        if ((e as Error).name !== 'AbortError') { setResults([]); setNotice(null); }
       } finally {
         setLoading(false);
       }
@@ -89,7 +91,7 @@ export function GiftSearch() {
           type="text"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search by tagline, author, company name, or Bloomberg ticker…"
+          placeholder="Search by tagline, author, company, ticker — or paste a smartkarma.com/insights URL"
           className="w-full rounded-xl border border-ink-200 bg-white px-4 py-3 pr-10 text-sm shadow-soft focus:border-accent outline-none"
           autoFocus
         />
@@ -155,7 +157,13 @@ export function GiftSearch() {
       <div className="mt-4">
         {loading && <div className="text-xs text-ink-500">Searching…</div>}
         {results && results.length === 0 && !loading && (
-          <div className="text-sm text-ink-500">No matching insights you're allowed to gift.</div>
+          <div className="text-sm text-ink-500">
+            {notice === 'insight_not_found'
+              ? "We couldn't find that insight on Smartkarma."
+              : notice === 'not_permitted'
+              ? "You don't have permission to gift insights from this author."
+              : "No matching insights you're allowed to gift."}
+          </div>
         )}
         {results && results.length > 0 && (
           <ul className="bg-white border border-ink-100 rounded-xl shadow-soft divide-y divide-ink-100 overflow-hidden">
