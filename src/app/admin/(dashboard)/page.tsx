@@ -1,5 +1,6 @@
 import { writeQuery } from '@/lib/db-write';
-import { fmtDate, fmtDateTime } from '@/lib/fmt';
+import { fmtDate } from '@/lib/fmt';
+import { ActivityTable, type ActivityRow } from '@/components/ActivityTable';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,13 +38,6 @@ type TopRecipient = {
   reads: number;
   thanks: number;
   last_read: string;
-};
-
-type ActivityRow = {
-  kind: 'link_created' | 'view' | 'thanks' | 'trial_intent';
-  at: string;
-  actor: string;
-  detail: string;
 };
 
 async function loadStats(): Promise<Stats> {
@@ -211,7 +205,7 @@ export default async function AdminOverview() {
       </Section>
 
       <Section title="Recent activity">
-        <ActivityFeed rows={activity} />
+        <ActivityTable rows={activity} />
       </Section>
     </div>
   );
@@ -277,33 +271,3 @@ function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
   );
 }
 
-const KIND_BADGE: Record<ActivityRow['kind'], { label: string; cls: string }> = {
-  link_created: { label: 'GIFT', cls: 'bg-accent-50 text-accent-700 border-accent/30' },
-  view:         { label: 'READ', cls: 'bg-ink-50 text-ink-700 border-ink-200' },
-  thanks:       { label: 'THX',  cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-  trial_intent: { label: 'TRIAL', cls: 'bg-purple-50 text-purple-700 border-purple-200' },
-};
-
-function ActivityFeed({ rows }: { rows: ActivityRow[] }) {
-  if (rows.length === 0) {
-    return <div className="text-sm text-ink-500">No activity yet.</div>;
-  }
-  return (
-    <ul className="bg-white border border-ink-100 rounded-xl shadow-soft divide-y divide-ink-100">
-      {rows.map((r, i) => {
-        const badge = KIND_BADGE[r.kind];
-        return (
-          <li key={i} className="px-4 py-3 flex items-start gap-3 text-sm">
-            <span className={`shrink-0 inline-flex items-center justify-center px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wider ${badge.cls}`}>
-              {badge.label}
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="text-ink-900"><span className="font-medium">{r.actor}</span> <span className="text-ink-600">{r.detail}</span></div>
-              <div className="text-[11px] text-ink-400 mt-0.5">{fmtDateTime(r.at)}</div>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
