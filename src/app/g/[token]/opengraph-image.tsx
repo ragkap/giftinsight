@@ -15,16 +15,19 @@ const INK_300 = '#a3a3a3';
 const BRAND_LOGO =
   'https://branding.smartkarma.com/assets/uploaded/sites/10/2021/03/smartkarma-primary-logo-full-colour-1000px.png';
 
-export default async function Image({ params }: { params: { token: string } }) {
+export default async function Image({ params }: { params: Promise<{ token: string }> }) {
+  // Next 15+ delivers dynamic route params as a Promise — must be awaited.
+  const { token } = await params;
   let link: { insight_tagline: string; gifter_name: string; insight_author_name: string } | undefined;
   try {
     link = (
       await writeQuery<{ insight_tagline: string; gifter_name: string; insight_author_name: string }>(
         `SELECT insight_tagline, gifter_name, insight_author_name FROM gift_links WHERE token = $1`,
-        [params.token],
+        [token],
       )
     )[0];
-  } catch {
+  } catch (err) {
+    console.warn('[og-image] db query failed:', (err as Error).message);
     // fall through to a generic card
   }
 
