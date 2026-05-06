@@ -20,6 +20,9 @@ export default async function LoginPage() {
             <BrandMark height={26} compact={false} />
             <h1 className="mt-5 text-2xl font-semibold text-ink-900 tracking-tight">
               Gift <span className="text-accent">Insight</span>
+              <sup className="ml-1 text-[10px] tracking-[0.18em] text-accent font-bold align-super">
+                BETA
+              </sup>
             </h1>
             <p className="mt-1.5 text-sm text-ink-500">
               Sign in with your Smartkarma credentials.
