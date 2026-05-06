@@ -12,6 +12,7 @@ const schema = z.object({
   RESEND_API_KEY: z.string().optional().default(''),
   EMAIL_FROM: z.string().default('Gift Insight <gift@smartkarma.com>'),
   SALES_EMAIL: z.string().email().default('rk@smartkarma.com'),
+  ADMIN_EMAILS: z.string().default('rk@smartkarma.com,sv@smartkarma.com'),
 
   SESSION_SECRET: z.string().min(16),
 
