@@ -24,6 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
           <nav className="flex items-center gap-3 md:gap-5 text-sm text-ink-700">
             <Link href="/app" className="hover:text-accent">Gift</Link>
+            <Link href="/app/access" className="hover:text-accent">Access</Link>
             <Link href="/app/analytics" className="hover:text-accent">Analytics</Link>
             {s.isInsightProvider && (
               <Link href="/app/permissions" className="hover:text-accent">Permissions</Link>
