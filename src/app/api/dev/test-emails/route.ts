@@ -11,6 +11,7 @@ import {
   gifterWelcomeHtml,
   recipientLinkHtml,
   permissionGrantedHtml,
+  requestToAuthorHtml,
 } from '@/lib/email';
 import { env } from '@/lib/env';
 
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
   const messages: Array<{ key: string; subject: string; html: string }> = [
     {
       key: 'read',
-      subject: '[TEST 1/7] Read notification → gifter',
+      subject: '[TEST 1/8] Read notification → gifter',
       html: readNotificationHtml({
         gifterFirstName: sample.gifterFirstName,
         recipientFirstName: sample.recipientFirstName,
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     },
     {
       key: 'pro',
-      subject: '[TEST 2/7] Pro-client redirect → gifter',
+      subject: '[TEST 2/8] Pro-client redirect → gifter',
       html: proClientNotificationHtml({
         gifterFirstName: sample.gifterFirstName,
         recipientFirstName: sample.recipientFirstName,
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     },
     {
       key: 'thanks',
-      subject: '[TEST 3/7] Thanks → insight author',
+      subject: '[TEST 3/8] Thanks → insight author',
       html: thanksToAuthorHtml({
         authorFirstName: sample.authorFirstName,
         gifterFirstName: sample.gifterFirstName,
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
     },
     {
       key: 'trial',
-      subject: `[TEST 4/7] Trial intent → ${e.SALES_EMAIL}`,
+      subject: `[TEST 4/8] Trial intent → ${e.SALES_EMAIL}`,
       html: trialInterestHtml({
         recipientFirstName: sample.recipientFirstName,
         recipientLastName: sample.recipientLastName,
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
     },
     {
       key: 'welcome',
-      subject: '[TEST 5/7] Welcome → first-time gifter',
+      subject: '[TEST 5/8] Welcome → first-time gifter',
       html: gifterWelcomeHtml({
         firstName: sample.gifterFirstName,
         appBaseUrl: e.APP_BASE_URL,
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
     },
     {
       key: 'recipient-link',
-      subject: '[TEST 6/7] Recipient link → reader',
+      subject: '[TEST 6/8] Recipient link → reader',
       html: recipientLinkHtml({
         recipientFirstName: sample.recipientFirstName,
         gifterName: sample.gifterFullName,
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
     },
     {
       key: 'permission-granted',
-      subject: '[TEST 7/7] Permission granted → grantee',
+      subject: '[TEST 7/8] Permission granted → grantee',
       html: permissionGrantedHtml({
         granteeFirstName: sample.recipientFirstName,
         grantorName: sample.gifterFullName,
@@ -121,6 +122,16 @@ export async function POST(req: NextRequest) {
         maxLinksPerMonth: e.GIFT_MAX_LINKS_PER_GIFTER_PER_MONTH,
         maxViewsPerLink: e.GIFT_MAX_VIEWS_PER_LINK,
         expiryDays: e.GIFT_LINK_EXPIRY_DAYS,
+      }),
+    },
+    {
+      key: 'request-to-author',
+      subject: '[TEST 8/8] Request to gift → author',
+      html: requestToAuthorHtml({
+        authorFirstName: sample.authorFirstName,
+        gifterName: sample.gifterFullName,
+        gifterCompany: 'BTIG',
+        appBaseUrl: e.APP_BASE_URL,
       }),
     },
   ];
