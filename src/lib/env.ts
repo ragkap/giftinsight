@@ -22,6 +22,9 @@ const schema = z.object({
   RECIPIENT_THANKS_MODAL_THRESHOLD: z.coerce.number().default(3),
   RECIPIENT_COOKIE_DAYS: z.coerce.number().default(180),
   INSIGHT_SEARCH_MAX_AGE_YEARS: z.coerce.number().default(2),
+  REFORWARD_QUOTA_PER_VIEW: z.coerce.number().default(2),
+  REFORWARD_EXPIRY_DAYS: z.coerce.number().default(7),
+  REFORWARD_MAX_VIEWS_PER_LINK: z.coerce.number().default(1),
 
   APP_BASE_URL: z.string().url().default('http://localhost:3000'),
   SMARTKARMA_BASE_URL: z.string().url().default('https://www.smartkarma.com'),

@@ -99,6 +99,8 @@ export function Reader(p: Props) {
 
         <section className="mt-8 prose-sk" dangerouslySetInnerHTML={{ __html: p.detailHtml || '<p>(No further detail.)</p>' }} />
 
+        <PayItForward viewId={p.viewId} />
+
         <BottomCta trending={p.trending} viewId={p.viewId} />
       </article>
 
@@ -296,6 +298,116 @@ function ThanksToast() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PayItForward({ viewId }: { viewId: number }) {
+  type Forward = { url: string; expiresAt: string; remaining: number };
+  const [pending, setPending] = useState(false);
+  const [forwards, setForwards] = useState<Forward[]>([]);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+
+  async function generate() {
+    if (pending) return;
+    setPending(true);
+    setError(null);
+    try {
+      const r = await fetch('/api/recipient/reforward', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ viewId }),
+      });
+      const j = (await r.json().catch(() => null)) as
+        | { ok: true; url: string; expiresAt: string; remaining: number }
+        | { error: 'quota_exceeded'; cap: number; used: number }
+        | { error: string }
+        | null;
+      if (!r.ok) {
+        if (j && 'error' in j && j.error === 'quota_exceeded') {
+          setRemaining(0);
+          setError("You've used all your forwards for this insight.");
+        } else {
+          setError("Couldn't create a forwarding link. Please try again.");
+        }
+        return;
+      }
+      if (j && 'ok' in j) {
+        setForwards((prev) => [...prev, { url: j.url, expiresAt: j.expiresAt, remaining: j.remaining }]);
+        setRemaining(j.remaining);
+        try { await navigator.clipboard.writeText(j.url); setCopiedIdx(forwards.length); setTimeout(() => setCopiedIdx(null), 1600); } catch {}
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function copyAgain(url: string, idx: number) {
+    try { await navigator.clipboard.writeText(url); setCopiedIdx(idx); setTimeout(() => setCopiedIdx(null), 1600); } catch {}
+  }
+
+  const initialRemaining = remaining ?? null;
+
+  return (
+    <section className="mt-14 rounded-2xl border border-ink-100 bg-white p-6 shadow-soft">
+      <div className="flex items-start gap-3">
+        <div className="shrink-0 h-10 w-10 rounded-full bg-accent text-white inline-flex items-center justify-center">
+          <GiftIcon size={20} className="text-white" />
+        </div>
+        <div className="flex-1">
+          <div className="text-[11px] uppercase tracking-wider text-accent font-semibold">Pay it forward</div>
+          <h2 className="mt-1 text-lg font-semibold text-ink-900">Share this insight with a colleague</h2>
+          <p className="mt-1 text-sm text-ink-600">
+            Found this valuable? You can forward this insight to up to two colleagues — they'll
+            read it free too, no account required.
+          </p>
+        </div>
+      </div>
+
+      {forwards.length > 0 && (
+        <div className="mt-4 space-y-2">
+          {forwards.map((f, i) => (
+            <div key={i} className="flex items-center gap-2 rounded-lg border border-accent/30 bg-accent-50 px-3 py-2">
+              <span className="text-[10px] uppercase tracking-wider text-accent font-bold shrink-0">Link</span>
+              <code className="text-[12px] text-ink-700 truncate flex-1">{f.url}</code>
+              <button
+                onClick={() => copyAgain(f.url, i)}
+                className="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-700"
+              >
+                {copiedIdx === i ? (<><CheckIcon size={13} /> Copied</>) : 'Copy'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {error && <div className="mt-3 text-xs text-red-600">{error}</div>}
+
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          onClick={generate}
+          disabled={pending || initialRemaining === 0}
+          className="inline-flex items-center gap-2 rounded-lg bg-accent text-white text-sm font-semibold px-4 py-2.5 hover:bg-accent-600 disabled:opacity-60 transition"
+        >
+          <GiftIcon size={16} className="text-white" />
+          {pending
+            ? 'Generating…'
+            : forwards.length === 0
+            ? 'Generate forwarding link'
+            : initialRemaining && initialRemaining > 0
+            ? 'Generate another'
+            : 'Generate forwarding link'}
+        </button>
+        {initialRemaining !== null && (
+          <span className="text-xs text-ink-500">
+            {initialRemaining > 0
+              ? `${initialRemaining} more forward${initialRemaining === 1 ? '' : 's'} available`
+              : 'No forwards remaining'}
+          </span>
+        )}
+      </div>
+    </section>
   );
 }
 
