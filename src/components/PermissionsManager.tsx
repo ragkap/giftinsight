@@ -7,9 +7,11 @@ type State = {
   grants: { id: number; name: string; company: string | null; createdAt: string }[];
 };
 type UserHit = { id: number; name: string; company: string | null; isInsightProvider: boolean };
+type IncomingRequest = { id: number; gifterId: number; gifterName: string; gifterCompany: string | null; createdAt: string };
 
 export function PermissionsManager() {
   const [state, setState] = useState<State | null>(null);
+  const [requests, setRequests] = useState<IncomingRequest[]>([]);
   const [q, setQ] = useState('');
   const [hits, setHits] = useState<UserHit[]>([]);
   const [searching, setSearching] = useState(false);
@@ -17,10 +19,27 @@ export function PermissionsManager() {
   const abort = useRef<AbortController | null>(null);
 
   async function load() {
-    const r = await fetch('/api/permissions');
-    if (r.ok) setState(await r.json());
+    const [r1, r2] = await Promise.all([
+      fetch('/api/permissions'),
+      fetch('/api/permission-requests'),
+    ]);
+    if (r1.ok) setState(await r1.json());
+    if (r2.ok) {
+      const j = (await r2.json()) as { incoming: IncomingRequest[] };
+      setRequests(j.incoming ?? []);
+    }
   }
   useEffect(() => { void load(); }, []);
+
+  function respond(requestId: number, action: 'approve' | 'deny') {
+    start(async () => {
+      await fetch(`/api/permission-requests/${requestId}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      await load();
+    });
+  }
 
   useEffect(() => {
     const trimmed = q.trim();
@@ -77,6 +96,43 @@ export function PermissionsManager() {
 
   return (
     <div className="space-y-6">
+      {requests.length > 0 && (
+        <div className="rounded-xl border-2 border-accent bg-accent-50 p-4 shadow-soft">
+          <div className="text-[11px] uppercase tracking-wider text-accent font-semibold">
+            Pending requests ({requests.length})
+          </div>
+          <p className="mt-1 text-sm text-ink-700">
+            These people would like permission to gift your insights. Approving adds them
+            to your list below; they're emailed either way.
+          </p>
+          <ul className="mt-3 divide-y divide-accent/20 rounded-lg border border-accent/20 bg-white">
+            {requests.map((r) => (
+              <li key={r.id} className="px-4 py-3 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-ink-900 truncate">
+                    {r.gifterName}
+                    {r.gifterCompany && <span className="text-ink-500"> ({r.gifterCompany})</span>}
+                  </div>
+                  <div className="text-xs text-ink-400 mt-0.5">Asked {fmtDate(r.createdAt)}</div>
+                </div>
+                <button
+                  onClick={() => respond(r.id, 'deny')}
+                  className="text-xs text-ink-500 hover:text-red-600"
+                >
+                  Deny
+                </button>
+                <button
+                  onClick={() => respond(r.id, 'approve')}
+                  className="inline-flex items-center rounded-lg bg-accent text-white text-xs font-medium px-3 py-1.5 hover:bg-accent-600"
+                >
+                  Approve
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="rounded-xl border border-accent/30 bg-accent-50/50 p-4 flex items-start gap-3">
         <span className="inline-block h-2 w-2 rounded-full bg-accent mt-1.5" />
         <div className="text-sm text-ink-800">

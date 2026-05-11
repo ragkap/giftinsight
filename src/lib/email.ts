@@ -80,6 +80,31 @@ export function proClientNotificationHtml(args: {
   );
 }
 
+export function requestToAuthorHtml(args: {
+  authorFirstName: string;
+  gifterName: string;
+  gifterCompany: string | null;
+  appBaseUrl: string;
+}) {
+  const reviewUrl = `${args.appBaseUrl.replace(/\/$/, '')}/app/permissions`;
+  const who = args.gifterCompany ? `${args.gifterName} (${args.gifterCompany})` : args.gifterName;
+  return shell(
+    `<p style="margin:0 0 14px;">Hi ${esc(args.authorFirstName)},</p>
+     <p style="margin:0 0 16px;"><strong>${esc(who)}</strong> would like permission to gift your Smartkarma insights. Recipients of their gifts would read the full insight with no paywall — and you would not receive QVA for those reads.</p>
+
+     <p style="margin:0 0 18px;">Review the request and approve or deny it on your permissions page.</p>
+
+     <p style="margin:0 0 18px;">
+       <a href="${esc(reviewUrl)}" style="display:inline-block;background:${ACCENT};color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 22px;border-radius:10px;">Review request →</a>
+     </p>
+
+     <p style="margin:18px 0 0;font-size:13px;color:#525252;">
+       Tip: approving a request adds them to your "People allowed to gift your insights" list. You can revoke any time.
+     </p>`,
+    `${args.gifterName} would like to gift your insights.`,
+  );
+}
+
 export function permissionGrantedHtml(args: {
   granteeFirstName: string;
   grantorName: string;

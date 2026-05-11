@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { CheckIcon, GiftIcon } from '@/components/icons';
 import { fmtDate } from '@/lib/fmt';
+import { RequestAccessModal } from '@/components/RequestAccessModal';
 
 type Result = {
   id: number;
@@ -22,6 +23,7 @@ export function GiftSearch() {
   const [generated, setGenerated] = useState<{ url: string; tagline: string } | null>(null);
   const [recopied, setRecopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [requestOpen, setRequestOpen] = useState(false);
   const [, start] = useTransition();
   const abort = useRef<AbortController | null>(null);
 
@@ -157,14 +159,32 @@ export function GiftSearch() {
       <div className="mt-4">
         {loading && <div className="text-xs text-ink-500">Searching…</div>}
         {results && results.length === 0 && !loading && (
-          <div className="text-sm text-ink-500">
-            {notice === 'insight_not_found'
-              ? "We couldn't find that insight on Smartkarma."
-              : notice === 'not_permitted'
-              ? "You don't have permission to gift insights from this author."
-              : "No matching insights you're allowed to gift."}
+          <div className="rounded-xl border border-ink-100 bg-white p-4 text-sm shadow-soft">
+            {notice === 'insight_not_found' ? (
+              <div className="text-ink-700">We couldn't find that insight on Smartkarma.</div>
+            ) : (
+              <>
+                <div className="text-ink-900 font-medium">
+                  {notice === 'not_permitted'
+                    ? "You don't have permission to gift insights from this author yet."
+                    : "No matching insights you're allowed to gift."}
+                </div>
+                <p className="mt-1 text-ink-600">
+                  This is usually because the insight's author hasn't yet permitted you to gift
+                  their work. Ask them — they can approve in one click.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setRequestOpen(true)}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-accent text-white text-xs font-medium px-3 py-1.5 hover:bg-accent-600"
+                >
+                  Request access from an author
+                </button>
+              </>
+            )}
           </div>
         )}
+        <RequestAccessModal open={requestOpen} onClose={() => setRequestOpen(false)} />
         {results && results.length > 0 && (
           <ul className="bg-white border border-ink-100 rounded-xl shadow-soft divide-y divide-ink-100 overflow-hidden">
             {results.map((r) => (

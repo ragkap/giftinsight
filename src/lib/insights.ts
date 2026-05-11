@@ -211,6 +211,42 @@ export async function searchAccountsByName(q: string, limit = 10) {
   );
 }
 
+/**
+ * Active IPs only, for the "Request gifting access" typeahead. Excludes
+ * @smartkarma.com employees (they have the global bypass anyway).
+ */
+export async function searchActiveIPs(q: string, limit = 10) {
+  const trimmed = q.trim();
+  if (trimmed.length < 2) return [];
+  const like = `%${trimmed}%`;
+  return await readQuery<{
+    id: number;
+    email: string;
+    name: string | null;
+    first_name: string | null;
+    company_name: string | null;
+  }>(
+    `SELECT a.id, a.email, a.name, a.first_name, c.name AS company_name
+     FROM accounts a
+     LEFT JOIN companies c ON c.id = a.company_id
+     WHERE a.locked_at IS NULL
+       AND a.suspended_at IS NULL
+       AND a.activated = TRUE
+       AND a.email NOT ILIKE '%@smartkarma.com'
+       AND a.is_insight_provider = TRUE
+       AND EXISTS (
+         SELECT 1 FROM insights i
+         WHERE i.account_id = a.id
+           AND i.aasm_state = 'published'
+           AND i.published_at >= NOW() - INTERVAL '12 months'
+       )
+       AND (a.name ILIKE $1 OR a.first_name ILIKE $1 OR a.email ILIKE $1)
+     ORDER BY (a.name IS NULL), a.name ASC
+     LIMIT $2`,
+    [like, Math.min(limit, 25)],
+  );
+}
+
 export async function getAccountsByIds(ids: number[]) {
   if (ids.length === 0) return [];
   return await readQuery<{
