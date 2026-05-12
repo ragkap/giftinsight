@@ -148,8 +148,10 @@ async function loadTable(t: Table): Promise<Loaded> {
         at: string;
         actor: string;
         actor_email: string;
+        actor_domain: string | null;
         gifter: string;
         author: string;
+        insight_slug: string;
         detail: string;
       }>(
         `SELECT * FROM (
@@ -157,8 +159,10 @@ async function loadTable(t: Table): Promise<Loaded> {
                   l.created_at AS at,
                   l.gifter_name AS actor,
                   l.gifter_email AS actor_email,
+                  LOWER(NULLIF(split_part(l.gifter_email, '@', 2), '')) AS actor_domain,
                   l.gifter_name AS gifter,
                   l.insight_author_name AS author,
+                  l.insight_slug AS insight_slug,
                   l.insight_tagline AS detail
            FROM gift_links l
            UNION ALL
@@ -166,8 +170,10 @@ async function loadTable(t: Table): Promise<Loaded> {
                   v.viewed_at,
                   (v.recipient_first_name || ' ' || v.recipient_last_name),
                   v.recipient_email,
+                  LOWER(NULLIF(split_part(v.recipient_email, '@', 2), '')),
                   l.gifter_name,
                   l.insight_author_name,
+                  l.insight_slug,
                   l.insight_tagline
            FROM gift_views v JOIN gift_links l ON l.id = v.gift_link_id
            UNION ALL
@@ -175,8 +181,10 @@ async function loadTable(t: Table): Promise<Loaded> {
                   v.thanked_at,
                   (v.recipient_first_name || ' ' || v.recipient_last_name),
                   v.recipient_email,
+                  LOWER(NULLIF(split_part(v.recipient_email, '@', 2), '')),
                   l.gifter_name,
                   l.insight_author_name,
+                  l.insight_slug,
                   l.insight_tagline
            FROM gift_views v JOIN gift_links l ON l.id = v.gift_link_id
            WHERE v.thanked_at IS NOT NULL
@@ -185,8 +193,10 @@ async function loadTable(t: Table): Promise<Loaded> {
                   v.trial_interest_at,
                   (v.recipient_first_name || ' ' || v.recipient_last_name),
                   v.recipient_email,
+                  LOWER(NULLIF(split_part(v.recipient_email, '@', 2), '')),
                   l.gifter_name,
                   l.insight_author_name,
+                  l.insight_slug,
                   l.insight_tagline
            FROM gift_views v JOIN gift_links l ON l.id = v.gift_link_id
            WHERE v.trial_interest_at IS NOT NULL
@@ -195,8 +205,10 @@ async function loadTable(t: Table): Promise<Loaded> {
          ORDER BY at DESC`,
       );
       return {
-        header: ['kind', 'at', 'actor', 'actor_email', 'gifter', 'author', 'detail'],
-        rows: rows.map((r) => [r.kind, r.at, r.actor, r.actor_email, r.gifter, r.author, r.detail]),
+        header: ['kind', 'at', 'actor', 'actor_email', 'actor_domain', 'gifter', 'author', 'insight_slug', 'detail'],
+        rows: rows.map((r) => [
+          r.kind, r.at, r.actor, r.actor_email, r.actor_domain, r.gifter, r.author, r.insight_slug, r.detail,
+        ]),
       };
     }
     case 'links': {

@@ -1,4 +1,5 @@
 import { writeQuery } from '@/lib/db-write';
+import { env } from '@/lib/env';
 import { fmtDate } from '@/lib/fmt';
 import { ActivityTable, type ActivityRow } from '@/components/ActivityTable';
 import { ExportCsvButton } from '@/components/ExportCsvButton';
@@ -119,8 +120,10 @@ async function loadActivity(): Promise<ActivityRow[]> {
               l.created_at AS at,
               l.gifter_name AS actor,
               l.gifter_email AS actor_email,
+              LOWER(NULLIF(split_part(l.gifter_email, '@', 2), '')) AS actor_domain,
               l.gifter_name AS gifter,
               l.insight_author_name AS author,
+              l.insight_slug AS insight_slug,
               LEFT(l.insight_tagline, 120) AS detail
        FROM gift_links l
        UNION ALL
@@ -128,8 +131,10 @@ async function loadActivity(): Promise<ActivityRow[]> {
               v.viewed_at,
               (v.recipient_first_name || ' ' || v.recipient_last_name),
               v.recipient_email,
+              LOWER(NULLIF(split_part(v.recipient_email, '@', 2), '')),
               l.gifter_name,
               l.insight_author_name,
+              l.insight_slug,
               LEFT(l.insight_tagline, 120)
        FROM gift_views v JOIN gift_links l ON l.id = v.gift_link_id
        UNION ALL
@@ -137,8 +142,10 @@ async function loadActivity(): Promise<ActivityRow[]> {
               v.thanked_at,
               (v.recipient_first_name || ' ' || v.recipient_last_name),
               v.recipient_email,
+              LOWER(NULLIF(split_part(v.recipient_email, '@', 2), '')),
               l.gifter_name,
               l.insight_author_name,
+              l.insight_slug,
               LEFT(l.insight_tagline, 120)
        FROM gift_views v JOIN gift_links l ON l.id = v.gift_link_id
        WHERE v.thanked_at IS NOT NULL
@@ -147,8 +154,10 @@ async function loadActivity(): Promise<ActivityRow[]> {
               v.trial_interest_at,
               (v.recipient_first_name || ' ' || v.recipient_last_name),
               v.recipient_email,
+              LOWER(NULLIF(split_part(v.recipient_email, '@', 2), '')),
               l.gifter_name,
               l.insight_author_name,
+              l.insight_slug,
               LEFT(l.insight_tagline, 120)
        FROM gift_views v JOIN gift_links l ON l.id = v.gift_link_id
        WHERE v.trial_interest_at IS NOT NULL
@@ -227,7 +236,7 @@ export default async function AdminOverview() {
           </div>
         }
       >
-        <ActivityTable rows={activity} />
+        <ActivityTable rows={activity} smartkarmaBase={env().SMARTKARMA_BASE_URL} />
       </Section>
     </div>
   );
