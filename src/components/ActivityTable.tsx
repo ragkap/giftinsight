@@ -8,6 +8,11 @@ export type ActivityRow = {
   kind: ActivityKind;
   at: string;
   actor: string;
+  actor_email: string;
+  actor_domain: string | null;
+  gifter: string;
+  author: string;
+  insight_slug: string;
   detail: string;
 };
 
@@ -18,11 +23,18 @@ const KIND_BADGE: Record<ActivityKind, { label: string; cls: string }> = {
   trial_intent: { label: 'TRIAL', cls: 'bg-purple-50 text-purple-700 border-purple-200' },
 };
 
-type SortKey = 'kind' | 'actor' | 'detail' | 'at';
+type SortKey = 'kind' | 'actor' | 'actor_email' | 'actor_domain' | 'gifter' | 'author' | 'detail' | 'at';
 
 const KIND_ORDER: ActivityKind[] = ['link_created', 'view', 'thanks', 'trial_intent'];
 
-export function ActivityTable({ rows }: { rows: ActivityRow[] }) {
+export function ActivityTable({
+  rows,
+  smartkarmaBase,
+}: {
+  rows: ActivityRow[];
+  smartkarmaBase: string;
+}) {
+  const base = smartkarmaBase.replace(/\/$/, '');
   const [q, setQ] = useState('');
   const [activeKinds, setActiveKinds] = useState<Set<ActivityKind>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey>('at');
@@ -60,6 +72,10 @@ export function ActivityTable({ rows }: { rows: ActivityRow[] }) {
       if (!needle) return true;
       return (
         r.actor.toLowerCase().includes(needle) ||
+        (r.actor_email ?? '').toLowerCase().includes(needle) ||
+        (r.actor_domain ?? '').toLowerCase().includes(needle) ||
+        (r.gifter ?? '').toLowerCase().includes(needle) ||
+        (r.author ?? '').toLowerCase().includes(needle) ||
         r.detail.toLowerCase().includes(needle) ||
         KIND_BADGE[r.kind].label.toLowerCase().includes(needle) ||
         r.kind.toLowerCase().includes(needle)
@@ -67,17 +83,21 @@ export function ActivityTable({ rows }: { rows: ActivityRow[] }) {
     });
     filtered.sort((a, b) => {
       let cmp = 0;
-      if (sortKey === 'kind')   cmp = a.kind.localeCompare(b.kind);
-      else if (sortKey === 'actor')  cmp = a.actor.localeCompare(b.actor);
-      else if (sortKey === 'detail') cmp = a.detail.localeCompare(b.detail);
-      else cmp = new Date(a.at).getTime() - new Date(b.at).getTime();
+      if (sortKey === 'kind')              cmp = a.kind.localeCompare(b.kind);
+      else if (sortKey === 'actor')        cmp = a.actor.localeCompare(b.actor);
+      else if (sortKey === 'actor_email')  cmp = (a.actor_email ?? '').localeCompare(b.actor_email ?? '');
+      else if (sortKey === 'actor_domain') cmp = (a.actor_domain ?? '').localeCompare(b.actor_domain ?? '');
+      else if (sortKey === 'gifter')       cmp = (a.gifter ?? '').localeCompare(b.gifter ?? '');
+      else if (sortKey === 'author')       cmp = (a.author ?? '').localeCompare(b.author ?? '');
+      else if (sortKey === 'detail')       cmp = a.detail.localeCompare(b.detail);
+      else                                 cmp = new Date(a.at).getTime() - new Date(b.at).getTime();
       return dir === 'asc' ? cmp : -cmp;
     });
     return filtered;
   }, [rows, q, activeKinds, sortKey, dir]);
 
   const headerCls = (key: SortKey) =>
-    `font-medium px-4 py-2 cursor-pointer select-none hover:text-ink-900 ${
+    `font-medium px-4 py-2 cursor-pointer select-none hover:text-ink-900 whitespace-nowrap ${
       sortKey === key ? 'text-ink-900' : ''
     }`;
   const arrow = (key: SortKey) =>
@@ -126,7 +146,7 @@ export function ActivityTable({ rows }: { rows: ActivityRow[] }) {
             type="text"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Filter by name, action, or detail…"
+            placeholder="Filter by name, email, gifter, author…"
             className="w-full rounded-lg border border-ink-200 bg-white px-3 py-2 pr-9 text-sm focus:border-accent outline-none"
           />
           {q && (
@@ -146,40 +166,64 @@ export function ActivityTable({ rows }: { rows: ActivityRow[] }) {
       </div>
 
       <div className="bg-white border border-ink-100 rounded-xl shadow-soft overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-ink-50">
-            <tr className="text-ink-500 text-left">
-              <th className={headerCls('kind')}   onClick={() => clickHeader('kind')}   role="button" aria-sort={sortKey === 'kind'   ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>Type{arrow('kind')}</th>
-              <th className={headerCls('actor')}  onClick={() => clickHeader('actor')}  role="button" aria-sort={sortKey === 'actor'  ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>Actor{arrow('actor')}</th>
-              <th className={headerCls('detail')} onClick={() => clickHeader('detail')} role="button" aria-sort={sortKey === 'detail' ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>Detail{arrow('detail')}</th>
-              <th className={headerCls('at')}     onClick={() => clickHeader('at')}     role="button" aria-sort={sortKey === 'at'     ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>When{arrow('at')}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink-100">
-            {filteredSorted.length === 0 && (
-              <tr>
-                <td className="px-4 py-6 text-center text-sm text-ink-500" colSpan={4}>
-                  {filterActive ? 'No matching events.' : 'No activity yet.'}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-ink-50">
+              <tr className="text-ink-500 text-left">
+                <th className={headerCls('kind')}         onClick={() => clickHeader('kind')}         role="button" aria-sort={sortKey === 'kind'         ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>Type{arrow('kind')}</th>
+                <th className={headerCls('actor')}        onClick={() => clickHeader('actor')}        role="button" aria-sort={sortKey === 'actor'        ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>Actor{arrow('actor')}</th>
+                <th className={headerCls('actor_email')}  onClick={() => clickHeader('actor_email')}  role="button" aria-sort={sortKey === 'actor_email'  ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>Actor email{arrow('actor_email')}</th>
+                <th className={headerCls('actor_domain')} onClick={() => clickHeader('actor_domain')} role="button" aria-sort={sortKey === 'actor_domain' ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>Actor domain{arrow('actor_domain')}</th>
+                <th className={headerCls('gifter')}       onClick={() => clickHeader('gifter')}       role="button" aria-sort={sortKey === 'gifter'       ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>Gifter{arrow('gifter')}</th>
+                <th className={headerCls('author')}       onClick={() => clickHeader('author')}       role="button" aria-sort={sortKey === 'author'       ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>Author{arrow('author')}</th>
+                <th className={headerCls('detail')}       onClick={() => clickHeader('detail')}       role="button" aria-sort={sortKey === 'detail'       ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>Insight{arrow('detail')}</th>
+                <th className={headerCls('at')}           onClick={() => clickHeader('at')}           role="button" aria-sort={sortKey === 'at'           ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>When{arrow('at')}</th>
               </tr>
-            )}
-            {filteredSorted.map((r, i) => {
-              const badge = KIND_BADGE[r.kind];
-              return (
-                <tr key={i} className="align-top">
-                  <td className="px-4 py-2 whitespace-nowrap">
-                    <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wider ${badge.cls}`}>
-                      {badge.label}
-                    </span>
+            </thead>
+            <tbody className="divide-y divide-ink-100">
+              {filteredSorted.length === 0 && (
+                <tr>
+                  <td className="px-4 py-6 text-center text-sm text-ink-500" colSpan={8}>
+                    {filterActive ? 'No matching events.' : 'No activity yet.'}
                   </td>
-                  <td className="px-4 py-2 text-ink-900 whitespace-nowrap">{r.actor}</td>
-                  <td className="px-4 py-2 text-ink-700">{r.detail}</td>
-                  <td className="px-4 py-2 text-ink-500 text-xs whitespace-nowrap">{fmtDateTime(r.at)}</td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              )}
+              {filteredSorted.map((r, i) => {
+                const badge = KIND_BADGE[r.kind];
+                const insightUrl = r.insight_slug ? `${base}/insights/${r.insight_slug}` : null;
+                return (
+                  <tr key={i} className="align-top">
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full border text-[10px] font-bold tracking-wider ${badge.cls}`}>
+                        {badge.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-ink-900 whitespace-nowrap">{r.actor}</td>
+                    <td className="px-4 py-2 text-ink-500 text-xs whitespace-nowrap">{r.actor_email}</td>
+                    <td className="px-4 py-2 text-ink-500 text-xs whitespace-nowrap">{r.actor_domain ?? ''}</td>
+                    <td className="px-4 py-2 text-ink-700 whitespace-nowrap">{r.gifter}</td>
+                    <td className="px-4 py-2 text-ink-700 whitespace-nowrap">{r.author}</td>
+                    <td className="px-4 py-2 text-ink-700">
+                      {insightUrl ? (
+                        <a
+                          href={insightUrl}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="text-accent hover:underline"
+                        >
+                          {r.detail}
+                        </a>
+                      ) : (
+                        r.detail
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-ink-500 text-xs whitespace-nowrap">{fmtDateTime(r.at)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
