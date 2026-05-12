@@ -17,11 +17,6 @@ export default async function Permissions() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-accent/30 bg-accent-50/60 p-4 text-sm text-ink-800">
-        <strong className="text-ink-900">A note on gifting:</strong> when someone gifts your insight, the
-        recipient can read the full insight with no paywall — and you do not receive QVA for those reads.
-      </div>
-
       <PermissionsManager />
     </div>
   );
