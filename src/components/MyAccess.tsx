@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { fmtDate } from '@/lib/fmt';
 import { RequestAccessModal } from '@/components/RequestAccessModal';
-import { CheckIcon } from '@/components/icons';
+import { CheckIcon, LoadingRow } from '@/components/icons';
 
 type AccessAuthor = {
   id: number;
@@ -26,7 +26,7 @@ export function MyAccess() {
     fetch('/api/my-access').then((r) => r.json()).then(setData).catch(() => setData(null));
   }, []);
 
-  if (!data) return <div className="text-sm text-ink-500">Loading…</div>;
+  if (!data) return <LoadingRow />;
 
   if (data.isStaff) {
     return (

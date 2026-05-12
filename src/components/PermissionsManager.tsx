@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { fmtDate } from '@/lib/fmt';
+import { LoadingRow } from '@/components/icons';
 
 type State = {
   openToAll: boolean;
@@ -90,7 +91,7 @@ export function PermissionsManager() {
     });
   }
 
-  if (!state) return <div className="text-sm text-ink-500">Loading…</div>;
+  if (!state) return <LoadingRow />;
 
   const specificDisabled = state.openToAll;
 

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { fmtDate, fmtDateTime } from '@/lib/fmt';
+import { LoadingRow } from '@/components/icons';
 
 type Link = {
   id: number; token: string; insight_id: number; insight_slug: string;
@@ -44,7 +45,7 @@ export function Analytics() {
     catch {}
   }
 
-  if (!data) return <div className="text-sm text-ink-500">Loading…</div>;
+  if (!data) return <LoadingRow />;
 
   return (
     <div className="space-y-10">
