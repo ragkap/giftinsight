@@ -135,9 +135,11 @@ export function PermissionsManager() {
 
       <div className="rounded-xl border border-accent/30 bg-accent-50/50 p-4 flex items-start gap-3">
         <span className="inline-block h-2 w-2 rounded-full bg-accent mt-1.5 shrink-0" />
-        <div className="text-sm text-ink-800">
-          <strong className="text-ink-900">Smartkarma staff</strong> are allowed to gift your insights,
-          similar to providing trial access to prospects.
+        <div className="text-sm text-ink-800 leading-relaxed">
+          <strong className="text-ink-900">A note on gifting:</strong> when someone gifts your insight,
+          the recipient can read the full insight with no paywall — and you do not receive QVA for those
+          reads. <strong className="text-ink-900">Smartkarma staff</strong> are allowed to gift your
+          insights, similar to providing trial access to prospects.
         </div>
       </div>
 
