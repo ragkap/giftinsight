@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useTransition } from 'react';
-import { CheckIcon, GiftIcon } from '@/components/icons';
+import { CheckIcon, GiftIcon, LoadingRow } from '@/components/icons';
 import { fmtDate } from '@/lib/fmt';
 import { RequestAccessModal } from '@/components/RequestAccessModal';
 
@@ -157,7 +157,7 @@ export function GiftSearch() {
       {error && <div className="mt-3 text-xs text-red-600">{error}</div>}
 
       <div className="mt-4">
-        {loading && <div className="text-xs text-ink-500">Searching…</div>}
+        {loading && <LoadingRow label="Searching…" className="text-xs" />}
         {results && results.length === 0 && !loading && (
           <div className="rounded-xl border border-ink-100 bg-white p-4 text-sm shadow-soft">
             {notice === 'insight_not_found' ? (

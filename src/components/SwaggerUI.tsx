@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { LoadingRow } from '@/components/icons';
 
 const SWAGGER_VERSION = '5.18.2';
 const CSS_HREF = `https://unpkg.com/swagger-ui-dist@${SWAGGER_VERSION}/swagger-ui.css`;
@@ -77,7 +78,9 @@ export function SwaggerUI({ specUrl }: { specUrl: string }) {
   return (
     <div className="bg-white border border-ink-100 rounded-xl shadow-soft overflow-hidden">
       {!ready && !error && (
-        <div className="p-6 text-sm text-ink-500">Loading API explorer…</div>
+        <div className="p-6">
+          <LoadingRow label="Loading API explorer…" />
+        </div>
       )}
       {error && (
         <div className="p-6 text-sm text-red-600">

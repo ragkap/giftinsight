@@ -1,6 +1,6 @@
 'use client';
 import { useState, useTransition } from 'react';
-import { BrandMark, GiftIcon } from '@/components/icons';
+import { BrandMark, GiftIcon, Spinner } from '@/components/icons';
 
 type Props = {
   token: string;
@@ -117,7 +117,8 @@ export function GiftLanding(p: Props) {
           {error && <div className="text-xs text-red-600">{error}</div>}
 
           <button type="submit" disabled={pending}
-            className="w-full rounded-lg bg-accent text-white text-sm font-medium py-2.5 hover:bg-accent-600 disabled:opacity-50">
+            className="w-full rounded-lg bg-accent text-white text-sm font-medium py-2.5 hover:bg-accent-600 disabled:opacity-50 inline-flex items-center justify-center gap-2">
+            {pending && <Spinner size={14} />}
             {pending ? 'Loading insight…' : 'Read insight'}
           </button>
         </form>
