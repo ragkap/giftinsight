@@ -27,6 +27,16 @@ type SortKey = 'kind' | 'actor' | 'actor_email' | 'actor_domain' | 'gifter' | 'a
 
 const KIND_ORDER: ActivityKind[] = ['link_created', 'view', 'thanks', 'trial_intent'];
 
+function googleLinkedInUrl(name: string, domain: string | null): string {
+  // Strip the TLD off the domain so the query reads as a firm name
+  // ('glazercapital.com' → 'glazercapital'). We split on '.' and keep
+  // everything before the first dot — matches the common shape and
+  // doesn't add noise for the rare multi-segment TLDs.
+  const firm = domain ? domain.split('.')[0] : '';
+  const parts = [name, firm, 'linkedin'].filter(Boolean).join(' ');
+  return `https://www.google.com/search?q=${encodeURIComponent(parts).replace(/%20/g, '+')}`;
+}
+
 export function ActivityTable({
   rows,
   smartkarmaBase,
@@ -198,7 +208,17 @@ export function ActivityTable({
                         {badge.label}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-ink-900 whitespace-nowrap">{r.actor}</td>
+                    <td className="px-4 py-2 text-ink-900 whitespace-nowrap">
+                      <a
+                        href={googleLinkedInUrl(r.actor, r.actor_domain)}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="text-ink-900 hover:text-accent hover:underline"
+                        title="Open Google search for this person's LinkedIn"
+                      >
+                        {r.actor}
+                      </a>
+                    </td>
                     <td className="px-4 py-2 text-ink-500 text-xs whitespace-nowrap">{r.actor_email}</td>
                     <td className="px-4 py-2 text-ink-500 text-xs whitespace-nowrap">{r.actor_domain ?? ''}</td>
                     <td className="px-4 py-2 text-ink-700 whitespace-nowrap">{r.gifter}</td>
