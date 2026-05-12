@@ -147,32 +147,47 @@ async function loadTable(t: Table): Promise<Loaded> {
         kind: string;
         at: string;
         actor: string;
+        actor_email: string;
+        gifter: string;
+        author: string;
         detail: string;
       }>(
         `SELECT * FROM (
            SELECT 'link_created'::text AS kind,
                   l.created_at AS at,
                   l.gifter_name AS actor,
-                  ('"' || l.insight_tagline || '" - by ' || l.insight_author_name) AS detail
+                  l.gifter_email AS actor_email,
+                  l.gifter_name AS gifter,
+                  l.insight_author_name AS author,
+                  l.insight_tagline AS detail
            FROM gift_links l
            UNION ALL
            SELECT 'view'::text,
                   v.viewed_at,
                   (v.recipient_first_name || ' ' || v.recipient_last_name),
-                  ('read "' || l.insight_tagline || '" gifted by ' || l.gifter_name)
+                  v.recipient_email,
+                  l.gifter_name,
+                  l.insight_author_name,
+                  l.insight_tagline
            FROM gift_views v JOIN gift_links l ON l.id = v.gift_link_id
            UNION ALL
            SELECT 'thanks'::text,
                   v.thanked_at,
                   (v.recipient_first_name || ' ' || v.recipient_last_name),
-                  ('thanked ' || l.gifter_name || ' for "' || l.insight_tagline || '"')
+                  v.recipient_email,
+                  l.gifter_name,
+                  l.insight_author_name,
+                  l.insight_tagline
            FROM gift_views v JOIN gift_links l ON l.id = v.gift_link_id
            WHERE v.thanked_at IS NOT NULL
            UNION ALL
            SELECT 'trial_intent'::text,
                   v.trial_interest_at,
                   (v.recipient_first_name || ' ' || v.recipient_last_name),
-                  ('clicked Start free trial while reading "' || l.insight_tagline || '"')
+                  v.recipient_email,
+                  l.gifter_name,
+                  l.insight_author_name,
+                  l.insight_tagline
            FROM gift_views v JOIN gift_links l ON l.id = v.gift_link_id
            WHERE v.trial_interest_at IS NOT NULL
          ) e
@@ -180,8 +195,8 @@ async function loadTable(t: Table): Promise<Loaded> {
          ORDER BY at DESC`,
       );
       return {
-        header: ['kind', 'at', 'actor', 'detail'],
-        rows: rows.map((r) => [r.kind, r.at, r.actor, r.detail]),
+        header: ['kind', 'at', 'actor', 'actor_email', 'gifter', 'author', 'detail'],
+        rows: rows.map((r) => [r.kind, r.at, r.actor, r.actor_email, r.gifter, r.author, r.detail]),
       };
     }
     case 'links': {

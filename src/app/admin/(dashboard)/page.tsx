@@ -118,26 +118,38 @@ async function loadActivity(): Promise<ActivityRow[]> {
        SELECT 'link_created'::text AS kind,
               l.created_at AS at,
               l.gifter_name AS actor,
-              ('"' || LEFT(l.insight_tagline, 80) || '" — by ' || l.insight_author_name) AS detail
+              l.gifter_email AS actor_email,
+              l.gifter_name AS gifter,
+              l.insight_author_name AS author,
+              LEFT(l.insight_tagline, 120) AS detail
        FROM gift_links l
        UNION ALL
        SELECT 'view'::text,
               v.viewed_at,
               (v.recipient_first_name || ' ' || v.recipient_last_name),
-              ('read "' || LEFT(l.insight_tagline, 80) || '" gifted by ' || l.gifter_name) AS detail
+              v.recipient_email,
+              l.gifter_name,
+              l.insight_author_name,
+              LEFT(l.insight_tagline, 120)
        FROM gift_views v JOIN gift_links l ON l.id = v.gift_link_id
        UNION ALL
        SELECT 'thanks'::text,
               v.thanked_at,
               (v.recipient_first_name || ' ' || v.recipient_last_name),
-              ('thanked ' || l.gifter_name || ' for "' || LEFT(l.insight_tagline, 80) || '"') AS detail
+              v.recipient_email,
+              l.gifter_name,
+              l.insight_author_name,
+              LEFT(l.insight_tagline, 120)
        FROM gift_views v JOIN gift_links l ON l.id = v.gift_link_id
        WHERE v.thanked_at IS NOT NULL
        UNION ALL
        SELECT 'trial_intent'::text,
               v.trial_interest_at,
               (v.recipient_first_name || ' ' || v.recipient_last_name),
-              ('clicked Start free trial while reading "' || LEFT(l.insight_tagline, 80) || '"') AS detail
+              v.recipient_email,
+              l.gifter_name,
+              l.insight_author_name,
+              LEFT(l.insight_tagline, 120)
        FROM gift_views v JOIN gift_links l ON l.id = v.gift_link_id
        WHERE v.trial_interest_at IS NOT NULL
      ) e
