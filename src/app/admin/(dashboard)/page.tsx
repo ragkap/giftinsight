@@ -3,6 +3,7 @@ import { env } from '@/lib/env';
 import { fmtDate } from '@/lib/fmt';
 import { ActivityTable, type ActivityRow } from '@/components/ActivityTable';
 import { ExportCsvButton } from '@/components/ExportCsvButton';
+import { AdminTabs } from '@/components/AdminTabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -177,13 +178,23 @@ export default async function AdminOverview() {
     loadActivity(),
   ]);
 
-  return (
-    <div className="space-y-10">
-      <div>
-        <h1 className="text-2xl font-semibold text-ink-900">Usage overview</h1>
-        <p className="text-sm text-ink-500 mt-1">All-time activity across Gift Insight.</p>
-      </div>
+  const activityPanel = (
+    <Section
+      title="Recent activity"
+      action={
+        <div className="flex items-center gap-2">
+          <ExportCsvButton table="activity" label="Export activity" />
+          <ExportCsvButton table="links" label="Export links" />
+          <ExportCsvButton table="views" label="Export views" />
+        </div>
+      }
+    >
+      <ActivityTable rows={activity} smartkarmaBase={env().SMARTKARMA_BASE_URL} />
+    </Section>
+  );
 
+  const overviewPanel = (
+    <div className="space-y-10">
       <StatGrid stats={stats} />
 
       <div className="grid lg:grid-cols-2 gap-8">
@@ -225,19 +236,17 @@ export default async function AdminOverview() {
           ])}
         />
       </Section>
+    </div>
+  );
 
-      <Section
-        title="Recent activity"
-        action={
-          <div className="flex items-center gap-2">
-            <ExportCsvButton table="activity" label="Export activity" />
-            <ExportCsvButton table="links" label="Export links" />
-            <ExportCsvButton table="views" label="Export views" />
-          </div>
-        }
-      >
-        <ActivityTable rows={activity} smartkarmaBase={env().SMARTKARMA_BASE_URL} />
-      </Section>
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-ink-900">Usage overview</h1>
+        <p className="text-sm text-ink-500 mt-1">All-time activity across Gift Insight.</p>
+      </div>
+
+      <AdminTabs activity={activityPanel} overview={overviewPanel} />
     </div>
   );
 }
