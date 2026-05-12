@@ -138,8 +138,8 @@ export function PermissionsManager() {
         <div className="text-sm text-ink-800 leading-relaxed">
           <strong className="text-ink-900">A note on gifting:</strong> when someone gifts your insight,
           the recipient can read the full insight with no paywall — and you do not receive QVA for those
-          reads. <strong className="text-ink-900">Smartkarma staff</strong> are allowed to gift your
-          insights, similar to providing trial access to prospects.
+          reads. Smartkarma staff are allowed to gift your insights, similar to providing trial
+          access to prospects.
         </div>
       </div>
 
