@@ -367,6 +367,50 @@ paths:
               example: { error: forbidden }
         '500': { description: Internal error. }
 
+  /api/admin/export:
+    get:
+      tags: [Admin]
+      summary: Export an admin table as CSV
+      description: |
+        Returns one of the admin overview tables as a CSV download.
+        Auth: must be signed in **and** the session email must appear in
+        the `ADMIN_EMAILS` allowlist. The response carries
+        `Content-Disposition: attachment` with a filename like
+        `gift-insight-{table}-{YYYY-MM-DD}.csv`.
+
+        Tables (no LIMIT — full rowset):
+          - `gifters`    — every gifter aggregated
+          - `authors`    — every author whose work has been gifted
+          - `recipients` — every recipient who has read at least once
+          - `activity`   — full activity feed (link_created / view / thanks / trial_intent)
+          - `links`      — raw `gift_links` rows
+          - `views`      — raw `gift_views` rows joined to their link
+      parameters:
+        - in: query
+          name: table
+          required: true
+          schema:
+            type: string
+            enum: [gifters, authors, recipients, activity, links, views]
+      responses:
+        '200':
+          description: CSV file.
+          content:
+            text/csv:
+              schema: { type: string, format: binary }
+        '400':
+          description: Unknown `table` value.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example: { error: invalid_table, allowed: [gifters, authors, recipients, activity, links, views] }
+        '403':
+          description: Not in `ADMIN_EMAILS`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+              example: { error: forbidden }
+
   # ─────────────────────────────────────── Search ───────────────────────────────────────
   /api/search/insights:
     get:

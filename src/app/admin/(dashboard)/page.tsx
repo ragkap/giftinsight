@@ -1,6 +1,7 @@
 import { writeQuery } from '@/lib/db-write';
 import { fmtDate } from '@/lib/fmt';
 import { ActivityTable, type ActivityRow } from '@/components/ActivityTable';
+import { ExportCsvButton } from '@/components/ExportCsvButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -165,7 +166,7 @@ export default async function AdminOverview() {
       <StatGrid stats={stats} />
 
       <div className="grid lg:grid-cols-2 gap-8">
-        <Section title="Top gifters">
+        <Section title="Top gifters" action={<ExportCsvButton table="gifters" />}>
           <Table
             head={['Gifter', 'Links', 'Views', 'Thanks', 'Last']}
             rows={topGifters.map((g) => [
@@ -178,7 +179,7 @@ export default async function AdminOverview() {
           />
         </Section>
 
-        <Section title="Most-gifted authors">
+        <Section title="Most-gifted authors" action={<ExportCsvButton table="authors" />}>
           <Table
             head={['Author', 'Times gifted', 'Distinct gifters', 'Views']}
             rows={topAuthors.map((a) => [
@@ -191,7 +192,7 @@ export default async function AdminOverview() {
         </Section>
       </div>
 
-      <Section title="Top recipients">
+      <Section title="Top recipients" action={<ExportCsvButton table="recipients" />}>
         <Table
           head={['Recipient', 'Email', 'Reads', 'Thanks', 'Last read']}
           rows={topRecipients.map((r) => [
@@ -204,7 +205,16 @@ export default async function AdminOverview() {
         />
       </Section>
 
-      <Section title="Recent activity">
+      <Section
+        title="Recent activity"
+        action={
+          <div className="flex items-center gap-2">
+            <ExportCsvButton table="activity" label="Export activity" />
+            <ExportCsvButton table="links" label="Export links" />
+            <ExportCsvButton table="views" label="Export views" />
+          </div>
+        }
+      >
         <ActivityTable rows={activity} />
       </Section>
     </div>
@@ -232,10 +242,21 @@ function StatGrid({ stats }: { stats: Stats }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <section>
-      <h2 className="text-sm font-semibold text-ink-700 mb-3">{title}</h2>
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <h2 className="text-sm font-semibold text-ink-700">{title}</h2>
+        {action}
+      </div>
       {children}
     </section>
   );

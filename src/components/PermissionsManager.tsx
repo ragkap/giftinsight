@@ -134,9 +134,12 @@ export function PermissionsManager() {
       )}
 
       <div className="rounded-xl border border-accent/30 bg-accent-50/50 p-4 flex items-start gap-3">
-        <span className="inline-block h-2 w-2 rounded-full bg-accent mt-1.5" />
-        <div className="text-sm text-ink-800">
+        <span className="inline-block h-2 w-2 rounded-full bg-accent mt-1.5 shrink-0" />
+        <div className="text-sm text-ink-800 leading-relaxed">
           <strong className="text-ink-900">Smartkarma employees</strong> can always gift your insights.
+          Think of it as running a Pro trial for the platform — except it&rsquo;s just one
+          insight at a time, and <strong className="text-ink-900">you retain full control</strong>:
+          revoke any grant, flip &ldquo;allow anyone&rdquo; off, or pause altogether at any time.
         </div>
       </div>
 
