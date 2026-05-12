@@ -134,9 +134,10 @@ export function PermissionsManager() {
       )}
 
       <div className="rounded-xl border border-accent/30 bg-accent-50/50 p-4 flex items-start gap-3">
-        <span className="inline-block h-2 w-2 rounded-full bg-accent mt-1.5" />
+        <span className="inline-block h-2 w-2 rounded-full bg-accent mt-1.5 shrink-0" />
         <div className="text-sm text-ink-800">
-          <strong className="text-ink-900">Smartkarma employees</strong> can always gift your insights.
+          <strong className="text-ink-900">Smartkarma staff</strong> are allowed to gift your insights,
+          similar to providing trial access to prospects.
         </div>
       </div>
 
