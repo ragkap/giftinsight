@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getSession } from '@/lib/auth';
+import { isAdminEmail } from '@/lib/admin';
 import { LogoutButton } from '@/components/LogoutButton';
 
 export const dynamic = 'force-dynamic';
@@ -8,6 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const s = await getSession();
   if (!s) redirect('/login');
+  const isAdmin = isAdminEmail(s.email);
 
   return (
     <div className="min-h-screen bg-ink-50/40">
@@ -28,6 +30,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link href="/app/analytics" className="hover:text-accent">Analytics</Link>
             {s.isInsightProvider && (
               <Link href="/app/permissions" className="hover:text-accent">Permissions</Link>
+            )}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1 text-accent hover:underline font-medium"
+                title="Admin overview"
+              >
+                Admin
+              </Link>
             )}
           </nav>
           <div className="ml-auto flex items-center gap-3 shrink-0">
